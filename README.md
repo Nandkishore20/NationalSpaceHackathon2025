@@ -1,5 +1,4 @@
 # Cargo Stowage Management System 🚀
-**National Space Hackathon 2025 Submission**
 
 [![Docker Build](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://hub.docker.com/)
 [![FastAPI](https://img.shields.io/badge/Powered%20by-FastAPI-green?logo=fastapi)](https://fastapi.tiangolo.com/)
