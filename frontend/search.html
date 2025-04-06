@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Search and Retrieval System</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        .navbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #f3eded;
+          color: rgb(124, 124, 124);
+          padding: 10px 20px;
+          outline: #333;
+          margin: 0 0px;
+        }
+        
+        .navbar-logo {
+          font-size: 24px;
+          font-weight: bold;
+        }
+        
+        .navbar-links {
+          display: flex;
+          list-style: none;
+          font-size: 18px;
+          font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+          font-weight: 800;
+          padding: 0 10px;
+          border: #333;
+          
+        }
+        
+        .navbar-links li {
+          padding: 0 10px;
+          margin: 10px 10px;
+        }
+        
+        .navbar-links a {
+          color: rgb(54, 54, 54);
+          text-decoration: none;
+        }
+        
+        .navbar-links a:hover {
+          color: #383838;
+        }
+        
+        /* Hamburger menu (hidden by default) */
+        .navbar-toggle {
+          display: none;
+          font-size: 24px;
+          cursor: pointer;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+          .navbar-links {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            position: absolute;
+            top: 49px;
+            left: 0;
+            background-color: #e2e2e2;
+            padding: 10px 0;
+          }
+          
+          .navbar-links.active {
+            display: flex;
+          }
+          
+          .navbar-links li {
+            padding: 10px 20px;
+          }
+          
+          .navbar-toggle {
+            display: block;
+          }
+          
+          .navbar {
+            flex-wrap: wrap;
+            position: relative;
+          }
+        }
+      </style>  
+      <script>
+        function toggleNav() {
+          const navLinks = document.getElementById('navLinks');
+          navLinks.classList.toggle('active');
+        }
+      </script> 
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="navbar">
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="index.html" >Placement(Home)</a></li>
+          <li><a href="Search.html" style="border-bottom: 2px solid #272626;">Search & Retriveal</a></li>
+          <li><a href="waste.html">Waste Management</a></li>
+          <li><a href="simulate.html" >Simulation</a></li>
+          <li><a href="log.html" >Logs</a></li>
+          <li><a href="visual.html" class="bg-white p-[10px] rounded-[10px]">3-D Visualization</a></li>
+        </ul>
+        <div class="navbar-logo">Search & Retriveal</div>
+        <div class="navbar-toggle" onclick="toggleNav()">☰</div>
+      </nav>
+    <div class="container mx-auto px-4 py-8">
+      
+        <!-- Search Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Search for Item</h2>
+            <form id="searchForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="itemId" class="block text-sm font-medium text-gray-700 mb-1">Item ID</label>
+                        <input type="text" placeholder="Either Item ID" id="itemId" name="itemId" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                    </div>
+                    <div>
+                        <label for="itemName" class="block text-sm font-medium text-gray-700 mb-1">Item Name</label>
+                        <input type="text" placeholder="Or Item name" id="itemName" name="itemName" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                    </div>
+                    <div>
+                        <label for="userId" class="block text-sm font-medium text-gray-700 mb-1">User ID (Optional)</label>
+                        <input type="text" placeholder="User ID for Retrieval" id="userId" name="userId" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                    </div>
+                </div>
+                <div class="flex justify-center">
+                    <button type="submit" class="px-6 py-2 bg-gray-600 text-white font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">Search</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden flex justify-center mb-8">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-500"></div>
+        </div>
+        
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-8" role="alert">
+            <p id="errorText"></p>
+        </div>
+        
+        <!-- Search Results -->
+        <div id="searchResults" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Item Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-3">Basic Information</h3>
+                    <div class="bg-gray-50 p-4 rounded-md">
+                        <p class="mb-2"><span class="font-semibold">Item ID:</span> <span id="result-itemId"></span></p>
+                        <p class="mb-2"><span class="font-semibold">Name:</span> <span id="result-name"></span></p>
+                        <p class="mb-2"><span class="font-semibold">Container ID:</span> <span id="result-containerId"></span></p>
+                        <p class="mb-2"><span class="font-semibold">Zone:</span> <span id="result-zone"></span></p>
+                        <button id="retrieveBtn" class="mt-4 px-4 py-2 bg-gray-600 text-white font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Retrieval Steps</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium mb-3">Position Information</h3>
+                    <div class="bg-gray-50 p-4 rounded-md">
+                        <h4 class="font-medium mb-2">Start Coordinates:</h4>
+                        <p class="mb-1 ml-4"><span class="font-semibold">Width:</span> <span id="result-startWidth"></span></p>
+                        <p class="mb-1 ml-4"><span class="font-semibold">Depth:</span> <span id="result-startDepth"></span></p>
+                        <p class="mb-3 ml-4"><span class="font-semibold">Height:</span> <span id="result-startHeight"></span></p>
+                        
+                        <h4 class="font-medium mb-2">End Coordinates:</h4>
+                        <p class="mb-1 ml-4"><span class="font-semibold">Width:</span> <span id="result-endWidth"></span></p>
+                        <p class="mb-1 ml-4"><span class="font-semibold">Depth:</span> <span id="result-endDepth"></span></p>
+                        <p class="mb-1 ml-4"><span class="font-semibold">Height:</span> <span id="result-endHeight"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Retrieval Steps -->
+        <div id="retrievalSteps" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Retrieval Steps</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr>
+                            <th class="py-2 px-4 bg-gray-100 border-b border-gray-200 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Step</th>
+                            <th class="py-2 px-4 bg-gray-100 border-b border-gray-200 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Action</th>
+                            <th class="py-2 px-4 bg-gray-100 border-b border-gray-200 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Item ID</th>
+                            <th class="py-2 px-4 bg-gray-100 border-b border-gray-200 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Item Name</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stepsTableBody">
+                        <!-- Steps will be added here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Place Back Form -->
+        <div id="placeBackForm" class="hidden bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Place Item Back</h2>
+            <form id="placeBack" class="space-y-4">
+                <input type="hidden" id="placeBack-itemId">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="placeBack-userId" class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                        <input type="text" id="placeBack-userId" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                    </div>
+                    <div>
+                        <label for="placeBack-containerId" class="block text-sm font-medium text-gray-700 mb-1">Container ID</label>
+                        <select id="placeBack-containerId" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                            <!-- Container options will be populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-md font-medium mb-2">Start Coordinates</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label for="placeBack-startWidth" class="block text-sm font-medium text-gray-700 mb-1">Width</label>
+                                <input type="number" id="placeBack-startWidth" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                            </div>
+                            <div>
+                                <label for="placeBack-startDepth" class="block text-sm font-medium text-gray-700 mb-1">Depth</label>
+                                <input type="number" id="placeBack-startDepth" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                            </div>
+                            <div>
+                                <label for="placeBack-startHeight" class="block text-sm font-medium text-gray-700 mb-1">Height</label>
+                                <input type="number" id="placeBack-startHeight" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-md font-medium mb-2">End Coordinates</h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label for="placeBack-endWidth" class="block text-sm font-medium text-gray-700 mb-1">Width</label>
+                                <input type="number" id="placeBack-endWidth" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                            </div>
+                            <div>
+                                <label for="placeBack-endDepth" class="block text-sm font-medium text-gray-700 mb-1">Depth</label>
+                                <input type="number" id="placeBack-endDepth" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                            </div>
+                            <div>
+                                <label for="placeBack-endHeight" class="block text-sm font-medium text-gray-700 mb-1">Height</label>
+                                <input type="number" id="placeBack-endHeight" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-gray-500 focus:border-gray-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center">
+                    <button type="submit" class="px-6 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Retrieve and Place Back</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Notification Messages -->
+        <div id="notification" class="fixed bottom-4 right-4 max-w-sm bg-white border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md transform transition-transform duration-300 translate-y-full">
+            <div class="flex">
+                <div class="py-1"><svg class="h-6 w-6 text-green-500 mr-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg></div>
+                <div>
+                    <p class="font-bold" id="notificationTitle">Success!</p>
+                    <p class="text-sm" id="notificationMessage"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+let currentItemId = null;
+let currentItem = null;
+let containers = [];
+let allItems = [];
+
+// Document ready function
+$(document).ready(function() {
+    // Fetch containers and items data on page load
+    fetchContainers();
+    fetchItems();
+    
+    // Set up event listeners
+    $("#searchForm").on("submit", handleSearch);
+    $("#retrieveBtn").on("click", retrieveItem);
+    $("#placeBack").on("submit", handlePlaceBack);
+});
+
+// Fetch all containers from API
+function fetchContainers() {
+    $.ajax({
+        url: 'http://127.0.0.1:8000/api/get/containers',
+        method: 'GET',
+        success: function(data) {
+            containers = data;
+            populateContainerDropdown();
+        },
+        error: function(err) {
+            showError("Failed to load containers. Please try again later.");
+            console.error("Error fetching containers:", err);
+        }
+    });
+}
+
+// Fetch all items from API
+function fetchItems() {
+    $.ajax({
+        url: 'http://127.0.0.1:8000/api/get/items',
+        method: 'GET',
+        success: function(data) {
+            allItems = data;
+        },
+        error: function(err) {
+            showError("Failed to load items. Please try again later.");
+            console.error("Error fetching items:", err);
+        }
+    });
+}
+
+// Populate container dropdown
+function populateContainerDropdown() {
+    const dropdown = $("#placeBack-containerId");
+    dropdown.empty();
+    
+    containers.forEach(container => {
+        dropdown.append(
+            $("<option></option>")
+                .attr("value", container.containerId)
+                .text(`${container.containerId} (${container.zone})`)
+        );
+    });
+}
+
+// Handle search form submission
+function handleSearch(e) {
+    e.preventDefault();
+    
+    const itemId = $("#itemId").val().trim();
+    const itemName = $("#itemName").val().trim();
+    const userId = $("#userId").val().trim();
+    
+    // Validate inputs (at least one of item ID or name is required)
+    if (!itemId && !itemName) {
+        showError("Please enter either Item ID or Item Name");
+        return;
+    }
+    
+    // Hide previous results and show loading spinner
+    $("#searchResults, #retrievalSteps, #errorMessage, #placeBackForm").addClass("hidden");
+    $("#loading").removeClass("hidden");
+    
+    // Build URL with query parameters
+    let url = 'http://127.0.0.1:8000/api/search?';
+    const params = [];
+    
+    if (itemId) params.push(`itemId=${encodeURIComponent(itemId)}`);
+    if (itemName) params.push(`itemName=${encodeURIComponent(itemName)}`);
+    if (userId) params.push(`userId=${encodeURIComponent(userId)}`);
+    
+    url += params.join('&');
+    
+    // Make API call
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function(data) {
+            $("#loading").addClass("hidden");
+            
+            if (data.success && data.found) {
+                displaySearchResults(data);
+            } else {
+                showError("Item not found. Please check your search criteria and try again.");
+            }
+        },
+        error: function(err) {
+            $("#loading").addClass("hidden");
+            showError("An error occurred while searching. Please try again later.");
+            console.error("Search error:", err);
+        }
+    });
+}
+
+// Display search results
+function displaySearchResults(data) {
+    const item = data.item;
+    currentItem = item;
+    currentItemId = item.itemId;
+    
+    // Populate basic information
+    $("#result-itemId").text(item.itemId);
+    $("#result-name").text(item.name);
+    $("#result-containerId").text(item.containerId);
+    $("#result-zone").text(item.zone);
+    
+    // Populate position information
+    $("#result-startWidth").text(item.position.startCoordinates.width);
+    $("#result-startDepth").text(item.position.startCoordinates.depth);
+    $("#result-startHeight").text(item.position.startCoordinates.height);
+    $("#result-endWidth").text(item.position.endCoordinates.width);
+    $("#result-endDepth").text(item.position.endCoordinates.depth);
+    $("#result-endHeight").text(item.position.endCoordinates.height);
+    
+    // Show results section
+    $("#searchResults").removeClass("hidden");
+    
+    // Populate and show retrieval steps if any
+    if (data.retrievalSteps && data.retrievalSteps.length > 0) {
+        populateRetrievalSteps(data.retrievalSteps);
+        $("#retrievalSteps").removeClass("hidden");
+    }
+    
+    // Enable retrieve button
+    $("#retrieveBtn").prop("disabled", false);
+}
+
+// Populate retrieval steps table
+function populateRetrievalSteps(steps) {
+    const tbody = $("#stepsTableBody");
+    tbody.empty();
+    
+    steps.forEach(step => {
+        const row = $("<tr></tr>").addClass("border-b border-gray-200 hover:bg-gray-50");
+        
+        row.append($("<td></td>").addClass("py-2 px-4").text(step.step));
+        row.append($("<td></td>").addClass("py-2 px-4").text(step.action));
+        row.append($("<td></td>").addClass("py-2 px-4").text(step.itemId));
+        row.append($("<td></td>").addClass("py-2 px-4").text(step.itemName));
+        
+        tbody.append(row);
+    });
+}
+
+// Handle retrieve item button click
+function retrieveItem() {
+    if (!currentItemId) {
+        showError("No item selected for retrieval");
+        return;
+    }
+    
+    const userId = $("#userId").val() || $("#placeBack-userId").val();
+    if (!userId) {
+        showError("User ID is required for retrieval");
+        return;
+    }
+    
+    // Show notification that retrieval is pending
+    showNotification("Retrieval In Process", 
+        `Please complete the retrieval process for '${currentItem.name}' by placing it back.`);
+    
+    // Disable search form and retrieve button
+    $("#searchForm :input").prop("disabled", true);
+    $("#retrieveBtn").prop("disabled", true);
+    
+    const timestamp = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    
+    // Make API call to retrieve item
+    $.ajax({
+        url: 'http://127.0.0.1:8000/api/retrieve',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            itemId: currentItemId,
+            userId: userId,
+            timestamp: timestamp
+        }),
+        success: function(data) {
+            if (data.success) {
+                // Show place back form
+                $("#placeBack-itemId").val(currentItemId);
+                $("#placeBack-userId").val(userId);
+                
+                // Set default position values from current item
+                if (currentItem && currentItem.position) {
+                    $("#placeBack-startWidth").val(currentItem.position.startCoordinates.width);
+                    $("#placeBack-startDepth").val(currentItem.position.startCoordinates.depth);
+                    $("#placeBack-startHeight").val(currentItem.position.startCoordinates.height);
+                    $("#placeBack-endWidth").val(currentItem.position.endCoordinates.width);
+                    $("#placeBack-endDepth").val(currentItem.position.endCoordinates.depth);
+                    $("#placeBack-endHeight").val(currentItem.position.endCoordinates.height);
+                    
+                    // Pre-select the container
+                    $("#placeBack-containerId").val(currentItem.containerId);
+                }
+                
+                $("#placeBackForm").removeClass("hidden");
+                
+                // Scroll to place back form
+                $('html, body').animate({
+                    scrollTop: $("#placeBackForm").offset().top - 20
+                }, 500);
+                
+            } else {
+                showError("Failed to retrieve item. Please try again.");
+                // Re-enable search form
+                $("#searchForm :input").prop("disabled", false);
+                $("#retrieveBtn").prop("disabled", false);
+            }
+        },
+        error: function(err) {
+            showError("An error occurred during retrieval. Please try again later.");
+            console.error("Retrieval error:", err);
+            // Re-enable search form
+            $("#searchForm :input").prop("disabled", false);
+            $("#retrieveBtn").prop("disabled", false);
+        }
+    });
+}
+
+// Handle place back form submission
+function handlePlaceBack(e) {
+    e.preventDefault();
+    
+    const itemId = $("#placeBack-itemId").val();
+    const userId = $("#placeBack-userId").val();
+    const containerId = $("#placeBack-containerId").val();
+    const timestamp = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    
+    // Validate inputs
+    if (!itemId || !userId || !containerId) {
+        showError("Item ID, User ID and Container ID are required");
+        return;
+    }
+    
+    // Get coordinates
+    const startWidth = parseInt($("#placeBack-startWidth").val()) || 0;
+    const startDepth = parseInt($("#placeBack-startDepth").val()) || 0;
+    const startHeight = parseInt($("#placeBack-startHeight").val()) || 0;
+    const endWidth = parseInt($("#placeBack-endWidth").val()) || 0;
+    const endDepth = parseInt($("#placeBack-endDepth").val()) || 0;
+    const endHeight = parseInt($("#placeBack-endHeight").val()) || 0;
+    
+    // Make API call to place back item
+    $.ajax({
+        url: 'http://127.0.0.1:8000/api/place-back',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            itemId: itemId,
+            userId: userId,
+            timestamp: timestamp,
+            containerId: containerId,
+            position: {
+                startCoordinates: {
+                    width: startWidth,
+                    depth: startDepth,
+                    height: startHeight
+                },
+                endCoordinates: {
+                    width: endWidth,
+                    depth: endDepth,
+                    height: endHeight
+                }
+            }
+        }),
+        success: function(data) {
+            if (data.success) {
+                // Show completion popup
+                showCompletionPopup(currentItem);
+            } else {
+                showError("Failed to place back item. Please try again.");
+            }
+        },
+        error: function(err) {
+            showError("An error occurred when placing back the item. Please try again later.");
+            console.error("Place back error:", err);
+        }
+    });
+}
+
+// Show completion popup
+function showCompletionPopup(item) {
+    // Create modal popup
+    const modal = $('<div>').addClass('fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50');
+    const modalContent = $('<div>').addClass('bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4');
+    
+    const title = $('<h3>').addClass('text-xl font-bold mb-4 text-green-700').text('Item Retrieved Successfully');
+    const message = $('<p>').addClass('mb-6').text(`Item '${item.name}' (ID: ${item.itemId}) has been successfully retrieved from ${item.containerId} and placed back.`);
+    const details = $('<div>').addClass('bg-gray-50 p-3 rounded-md mb-6');
+    details.append($('<p>').addClass('mb-1').html(`<span class="font-semibold">From:</span> ${item.zone}`));
+    details.append($('<p>').addClass('mb-1').html(`<span class="font-semibold">User ID:</span> ${$("#placeBack-userId").val()}`));
+    details.append($('<p>').html(`<span class="font-semibold">Date:</span> ${new Date().toLocaleDateString()}`));
+    
+    const okButton = $('<button>')
+        .addClass('w-full py-2 bg-green-600 text-white font-medium rounded-md hover:bg-gray-700')
+        .text('OK');
+    
+    modalContent.append(title, message, details, okButton);
+    modal.append(modalContent);
+    $('body').append(modal);
+    
+    // Handle OK button click
+    okButton.on('click', function() {
+        modal.remove();
+        resetForm();
+    });
+}
+
+// Reset the form to start a new search
+function resetForm() {
+    // Clear form inputs
+    $("#searchForm")[0].reset();
+    $("#placeBack")[0].reset();
+    
+    // Hide all sections except search
+    $("#searchResults, #retrievalSteps, #errorMessage, #placeBackForm").addClass("hidden");
+    
+    // Re-enable search form
+    $("#searchForm :input").prop("disabled", false);
+    $("#retrieveBtn").prop("disabled", false);
+    
+    // Clear current item
+    currentItemId = null;
+    currentItem = null;
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
+}
+
+// Show error message
+function showError(message) {
+    $("#errorText").text(message);
+    $("#errorMessage").removeClass("hidden");
+    
+    // Scroll to error message
+    $('html, body').animate({
+        scrollTop: $("#errorMessage").offset().top - 20
+    }, 500);
+    
+    // Hide after 5 seconds
+    setTimeout(function() {
+        $("#errorMessage").addClass("hidden");
+    }, 5000);
+}
+
+// Show notification
+function showNotification(title, message) {
+    $("#notificationTitle").text(title);
+    $("#notificationMessage").text(message);
+    
+    // Show notification
+    $("#notification").removeClass("translate-y-full");
+    
+    // Hide after 3 seconds
+    setTimeout(function() {
+        $("#notification").addClass("translate-y-full");
+    }, 3000);
+}
+    </script>
+</body>
+</html>

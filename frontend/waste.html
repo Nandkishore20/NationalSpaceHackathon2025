@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waste Management System</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #f3eded;
+      color: rgb(124, 124, 124);
+      padding: 10px 20px;
+      outline: #333;
+      margin: 0 0px;
+    }
+    
+    .navbar-logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    
+    .navbar-links {
+      display: flex;
+      list-style: none;
+      font-size: 18px;
+      font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+      font-weight: 800;
+      padding: 0 10px;
+      border: #333;
+      
+    }
+    
+    .navbar-links li {
+      padding: 0 10px;
+      margin: 10px 10px;
+    }
+    
+    .navbar-links a {
+      color: rgb(54, 54, 54);
+      text-decoration: none;
+    }
+    
+    .navbar-links a:hover {
+      color: #383838;
+    }
+    
+    /* Hamburger menu (hidden by default) */
+    .navbar-toggle {
+      display: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+      .navbar-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        position: absolute;
+        top: 49px;
+        left: 0;
+        background-color: #e2e2e2;
+        padding: 10px 0;
+      }
+      
+      .navbar-links.active {
+        display: flex;
+      }
+      
+      .navbar-links li {
+        padding: 10px 20px;
+      }
+      
+      .navbar-toggle {
+        display: block;
+      }
+      
+      .navbar {
+        flex-wrap: wrap;
+        position: relative;
+      }
+    }
+  </style>  
+  <script>
+    function toggleNav() {
+      const navLinks = document.getElementById('navLinks');
+      navLinks.classList.toggle('active');
+    }
+  </script> 
+</head>
+<body class="bg-gray-100 min-h-screen">
+<nav class="navbar">
+    <ul class="navbar-links" id="navLinks">
+        <li><a href="index.html" >Placement(Home)</a></li>
+      <li><a href="Search.html" ">Search & Retriveal</a></li>
+      <li><a href="waste.html" style="border-bottom: 2px solid #272626;">Waste Management</a></li>
+      <li><a href="simulate.html" >Simulation</a></li>
+      <li><a href="log.html">Logs</a></li>
+      <li><a href="visual.html" class="bg-white hover:bg-gray-100 text-white px-3 py-2 rounded-md transition">3-D Visualization</a></li>
+    </ul>
+    <div class="navbar-logo">Waste Management</div>
+    <div class="navbar-toggle" onclick="toggleNav()">☰</div>
+  </nav>
+  <div class="container mx-auto px-4 py-8">
+    
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Left Column -->
+      <div class="space-y-8">
+        <!-- Waste Identification Section -->
+        <section class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-search text-green-600 mr-2"></i>
+            Waste Identification
+          </h2>
+          <button id="identifyWasteBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded transition duration-300 w-full">
+            Identify Waste Items
+          </button>
+          
+          <div id="wasteItems" class="mt-4 hidden">
+            <h3 class="font-medium text-gray-700 mb-2">Identified Waste Items:</h3>
+            <div id="wasteItemsList" class="space-y-2">
+              <!-- Items will be inserted here -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Return Plan Section -->
+        <section class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-route text-green-600 mr-2"></i>
+            Return Plan
+          </h2>
+          <form id="returnPlanForm" class="space-y-4">
+            <div>
+              <label for="containerId" class="block text-sm font-medium text-gray-700 mb-1">Container ID</label>
+              <input type="text" id="containerId" name="containerId" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g. contA" required>
+            </div>
+            <div>
+              <label for="undockingDate" class="block text-sm font-medium text-gray-700 mb-1">Undocking Date</label>
+              <input type="date" id="undockingDate" name="undockingDate" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" required>
+            </div>
+            <div>
+              <label for="maxWeight" class="block text-sm font-medium text-gray-700 mb-1">Max Weight (kg)</label>
+              <input type="number" id="maxWeight" name="maxWeight" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="e.g. 100" required>
+            </div>
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition duration-300 w-full">
+              Generate Return Plan
+            </button>
+          </form>
+        </section>
+      </div>
+
+      <!-- Right Column -->
+      <div class="space-y-8">
+        <!-- Return Plan Results -->
+        <section id="returnPlanResults" class="bg-white rounded-lg shadow-md p-6 hidden">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-clipboard-list text-green-600 mr-2"></i>
+            Return Plan Details
+          </h2>
+          
+          <div class="space-y-6">
+            <!-- Return Plan Steps -->
+            <div>
+              <h3 class="font-medium text-gray-700 mb-2 border-b pb-1">Return Plan Steps:</h3>
+              <ul id="returnPlanSteps" class="list-disc pl-5 space-y-1">
+                <!-- Steps will be inserted here -->
+              </ul>
+            </div>
+            
+            <!-- Retrieval Steps -->
+            <div>
+              <h3 class="font-medium text-gray-700 mb-2 border-b pb-1">Retrieval Steps:</h3>
+              <ul id="retrievalSteps" class="list-disc pl-5 space-y-1">
+                <!-- Steps will be inserted here -->
+              </ul>
+            </div>
+            
+            <!-- Manifest Summary -->
+            <div>
+              <h3 class="font-medium text-gray-700 mb-2 border-b pb-1">Return Manifest:</h3>
+              <div id="returnManifest" class="text-sm space-y-1">
+                <!-- Manifest will be inserted here -->
+              </div>
+            </div>
+            
+            <button id="completeUndockingBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded transition duration-300 w-full">
+              Complete Undocking
+            </button>
+          </div>
+        </section>
+        
+        <!-- Status and Log Section -->
+        <section class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-info-circle text-green-600 mr-2"></i>
+            Status & Logs
+          </h2>
+          <div class="bg-gray-100 rounded-md p-4 h-64 overflow-y-auto">
+            <div id="statusLogs" class="space-y-2 text-sm">
+              <div class="log-entry">
+                <span class="text-gray-500">[System]</span> Waste management system ready...
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    
+    <!-- Statistics Section -->
+    <section class="mt-8 bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4">System Statistics</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-gray-100 p-4 rounded-lg">
+          <h3 class="text-gray-800 font-medium">Items Identified</h3>
+          <p id="statsIdentified" class="text-2xl font-bold">0</p>
+        </div>
+        <div class="bg-green-100 p-4 rounded-lg">
+          <h3 class="text-green-800 font-medium">Plans Generated</h3>
+          <p id="statsPlans" class="text-2xl font-bold">0</p>
+        </div>
+        <div class="bg-yellow-100 p-4 rounded-lg">
+          <h3 class="text-yellow-800 font-medium">Undockings Completed</h3>
+          <p id="statsUndockings" class="text-2xl font-bold">0</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    // Global variables to store state
+    let currentWasteItems = [];
+    let currentReturnPlan = null;
+    let stats = {
+      identified: 0,
+      plans: 0,
+      undockings: 0
+    };
+
+    // DOM elements
+    document.addEventListener('DOMContentLoaded', () => {
+      // Set default date to today
+      const today = new Date();
+      const formattedDate = today.toISOString().split('T')[0];
+      document.getElementById('undockingDate').value = formattedDate;
+      
+      // Event listeners
+      document.getElementById('identifyWasteBtn').addEventListener('click', identifyWaste);
+      document.getElementById('returnPlanForm').addEventListener('submit', generateReturnPlan);
+      document.getElementById('completeUndockingBtn').addEventListener('click', completeUndocking);
+    });
+
+    // Log message to status panel
+    function logMessage(message, type = 'info') {
+      const logElement = document.getElementById('statusLogs');
+      const timestamp = new Date().toLocaleTimeString();
+      const typeClass = type === 'error' ? 'text-red-500' : type === 'success' ? 'text-green-500' : 'text-gray-500';
+      
+      const logEntry = document.createElement('div');
+      logEntry.className = 'log-entry';
+      logEntry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> <span class="${typeClass}">${message}</span>`;
+      
+      logElement.appendChild(logEntry);
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+
+    // Update statistics
+    function updateStats() {
+      document.getElementById('statsIdentified').textContent = stats.identified;
+      document.getElementById('statsPlans').textContent = stats.plans;
+      document.getElementById('statsUndockings').textContent = stats.undockings;
+    }
+
+    // Identify waste items function
+    async function identifyWaste() {
+      try {
+        logMessage('Identifying waste items...');
+        
+        const response = await fetch('http://127.0.0.1:8000/api/waste/identify');
+        const data = await response.json();
+        
+        if (data.success) {
+          currentWasteItems = data.wasteItems;
+          stats.identified += currentWasteItems.length;
+          updateStats();
+          
+          // Display the waste items
+          const wasteItemsDiv = document.getElementById('wasteItems');
+          const wasteItemsList = document.getElementById('wasteItemsList');
+          wasteItemsList.innerHTML = '';
+          
+          currentWasteItems.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'bg-gray-50 p-3 rounded border border-gray-200';
+            itemElement.innerHTML = `
+              <p class="font-medium">${item.name} (ID: ${item.itemId})</p>
+              <p class="text-sm text-gray-600">Reason: ${item.reason}</p>
+              <p class="text-sm text-gray-600">Container: ${item.containerId}</p>
+            `;
+            wasteItemsList.appendChild(itemElement);
+          });
+          
+          wasteItemsDiv.classList.remove('hidden');
+          
+          // Auto-fill container ID if available
+          if (currentWasteItems.length > 0) {
+            document.getElementById('containerId').value = currentWasteItems[0].containerId;
+          }
+          
+          logMessage(`Successfully identified ${currentWasteItems.length} waste items.`, 'success');
+        } else {
+          logMessage('Failed to identify waste items.', 'error');
+        }
+      } catch (error) {
+        logMessage(`Error identifying waste: ${error.message}`, 'error');
+      }
+    }
+
+    // Generate return plan function
+    async function generateReturnPlan(event) {
+      event.preventDefault();
+      
+      const containerId = document.getElementById('containerId').value;
+      const undockingDate = document.getElementById('undockingDate').value;
+      const maxWeight = document.getElementById('maxWeight').value;
+      
+      try {
+        logMessage(`Generating return plan for container ${containerId}...`);
+        
+        const response = await fetch('http://127.0.0.1:8000/api/waste/return-plan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          },
+          body: JSON.stringify({
+            undockingContainerId: containerId,
+            undockingDate: undockingDate,
+            maxWeight: parseFloat(maxWeight)
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          currentReturnPlan = data;
+          stats.plans++;
+          updateStats();
+          
+          // Display return plan
+          document.getElementById('returnPlanResults').classList.remove('hidden');
+          
+          // Populate return plan steps
+          const returnPlanStepsEl = document.getElementById('returnPlanSteps');
+          returnPlanStepsEl.innerHTML = '';
+          data.returnPlan.forEach(step => {
+            const stepEl = document.createElement('li');
+            stepEl.textContent = `Step ${step.step}: Move "${step.itemName}" from ${step.fromContainer} to ${step.toContainer}`;
+            returnPlanStepsEl.appendChild(stepEl);
+          });
+          
+          // Populate retrieval steps
+          const retrievalStepsEl = document.getElementById('retrievalSteps');
+          retrievalStepsEl.innerHTML = '';
+          data.retrievalSteps.forEach(step => {
+            const stepEl = document.createElement('li');
+            stepEl.textContent = `Step ${step.step}: ${step.action} "${step.itemName}" (ID: ${step.itemId})`;
+            retrievalStepsEl.appendChild(stepEl);
+          });
+          
+          // Populate manifest
+          const manifestEl = document.getElementById('returnManifest');
+          const manifest = data.returnManifest;
+          manifestEl.innerHTML = `
+            <p><strong>Container ID:</strong> ${manifest.undockingContainerId}</p>
+            <p><strong>Undocking Date:</strong> ${manifest.undockingDate}</p>
+            <p><strong>Total Volume:</strong> ${manifest.totalVolume} cm³</p>
+            <p><strong>Total Weight:</strong> ${manifest.totalWeight} kg</p>
+            <p><strong>Items:</strong> ${manifest.returnItems.length}</p>
+          `;
+          
+          logMessage(`Successfully generated return plan with ${data.returnPlan.length} steps.`, 'success');
+        } else {
+          logMessage('Failed to generate return plan.', 'error');
+        }
+      } catch (error) {
+        logMessage(`Error generating return plan: ${error.message}`, 'error');
+      }
+    }
+
+    // Complete undocking function
+    async function completeUndocking() {
+      if (!currentReturnPlan) {
+        logMessage('No return plan generated yet.', 'error');
+        return;
+      }
+      
+      const containerId = currentReturnPlan.returnManifest.undockingContainerId;
+      const timestamp = new Date().toISOString().split('T')[0];
+      
+      try {
+        logMessage(`Completing undocking for container ${containerId}...`);
+        
+        const response = await fetch('http://127.0.0.1:8000/api/waste/complete-undocking', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+          },
+          body: JSON.stringify({
+            undockingContainerId: containerId,
+            timestamp: timestamp
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          stats.undockings++;
+          updateStats();
+          
+          logMessage(`Successfully completed undocking. Items removed: ${data.itemsRemoved}`, 'success');
+          
+          // Reset the form and results
+          setTimeout(() => {
+            document.getElementById('returnPlanResults').classList.add('hidden');
+            document.getElementById('wasteItems').classList.add('hidden');
+            currentReturnPlan = null;
+            currentWasteItems = [];
+          }, 2000);
+        } else {
+          logMessage('Failed to complete undocking.', 'error');
+        }
+      } catch (error) {
+        logMessage(`Error completing undocking: ${error.message}`, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

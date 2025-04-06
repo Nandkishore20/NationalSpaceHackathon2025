@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Box Visualization</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+           
+        }
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        .control-group {
+            margin-bottom: 10px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 10px;
+            cursor: pointer;
+            border-radius: 10px;
+            border-width: 0px;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        .inverted {
+            filter: invert(0.99);
+        }
+        .sidebar {
+            width: 320px;
+            background-color: #f5f7fa;
+            border-right: 1px solid #e0e3e8;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid #e0e3e8;
+        }
+        
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 16px;
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-input {
+            width: 80%;
+            padding: 10px 12px 10px 36px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .search-input:focus {
+            border-color: #4a90e2;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        .container-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        .container-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background-color: white;
+            border-radius: 8px;
+            border: 1px solid #e0e3e8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .container-item:hover {
+            background-color: #f0f3ff;
+            border-color: #c0c5d1;
+        }
+        
+        .container-item.selected {
+            background-color: #e7f0ff;
+            border-color: #4a90e2;
+        }
+        
+        .container-id {
+            font-weight: 600;
+            color: #333;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        
+        .container-zone {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .container-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .loading-message, .error-message, .no-results {
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        .selected-container-details {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #e0e3e8;
+        }
+        
+        .detail-heading {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        
+        .detail-item {
+            display: flex;
+            margin-bottom: 12px;
+        }
+        
+        .detail-label {
+            width: 120px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .detail-value {
+            color: #333;
+        }
+        #goBackBtn {
+            padding: 5px 60px;
+            font-size: 16px;
+            margin-left: 2rem;
+            background-color: #313131;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #goBackBtn:hover {
+        background-color: #0f0f0f;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <button id="goBackBtn">Go Back</button>
+            <div class="search-container">
+                <input type="text" id="search-input" class="search-input" placeholder="Search containers(name or Zone)">
+                <div class="search-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div id="container-list" class="container-list">
+            <div class="loading-message">Loading containers...</div>
+        </div>
+    </div>
+    <div id="container"></div>
+    <div id="controls">
+        <div class="control-group">
+            <button id="rotateLeft"><i class="fas fa-arrow-left"></i></button>
+            <button id="rotateRight"><i class="fas fa-arrow-right"></i></button>
+        </div>
+        <div class="control-group">
+            <button id="rotateUp"><i class="fas fa-arrow-up"></i></button>
+            <button id="rotateDown"><i class="fas fa-arrow-down"></i></button>
+        </div>
+        <div class="control-group">
+            <button id="zoomIn"><i class="fas fa-plus"></i></button>
+            <button id="zoomOut"><i class="fas fa-minus"></i></button>
+        </div>
+        <div class="control-group">
+            <button id="reset"><i class="fas fa-sync"></i></button>
+            <button onclick="toggleInvert()"><i class="fas fa-sun"></i></button>
+        </div>
+    </div>
+    <div id="info">
+    </div>
+    <script>
+        // Global variables
+let selectedContainerId = "contA"; // Default value
+let apiData = []; // To store API data
+let scene; // To store the scene configuration
+
+// Function to create a 3D box
+function createBox(boxData, scene) {
+    const box = document.createElement('div');
+    box.style.position = 'absolute';
+    box.style.transformStyle = 'preserve-3d';
+    box.style.backgroundColor = 'transparent';
+    
+    // Get dimensions using the extraction function
+    const dimensions = extractDimensions(boxData);
+    const { width, depth, height, position } = dimensions;
+    
+    // Determine if it's a container or an item
+    const isContainer = boxData.containerId && !boxData.itemId;
+    const isItem = boxData.itemId;
+    
+    // Generate color based on type and priority
+    let color;
+    let opacity = 0.56; // Default opacity
+    
+    if (isContainer) {
+        // Container boxes are semi-transparent gray
+        color = "rgb(200, 200, 200, 0.3)";
+    } else if (isItem) {
+        // Items get color based on priority (if available)
+        const priority = boxData.priority || 50; // Default to medium priority if not specified
+        
+        // Higher priority = more vibrant colors
+        if (priority >= 90) {
+            color = `rgb(255, 50, 50, ${opacity})`; // High priority - red
+        } else if (priority >= 75) {
+            color = `rgb(255, 165, 0, ${opacity})`; // Medium-high priority - orange
+        } else if (priority >= 50) {
+            color = `rgb(255, 255, 0, ${opacity})`; // Medium priority - yellow
+        } else if (priority >= 25) {
+            color = `rgb(0, 128, 0, ${opacity})`; // Medium-low priority - green
+        } else {
+            color = `rgb(0, 0, 255, ${opacity})`; // Low priority - blue
+        }
+    } else {
+        // Fallback for unknown types
+        color = getRandomColor();
+    }
+    
+    // Store the item data for selection purposes
+    const boxId = isItem ? boxData.itemId : (isContainer ? boxData.containerId : null);
+    
+    // Create the six faces of the box
+    // Right face
+    createFace(box, {
+        width: depth,
+        height: height,
+        transform: `translateZ(${width}px)`,
+        backgroundColor: color,
+        borderColor: "rgb(0, 0, 0, 0.2)"
+    });
+    
+    // Left face
+    createFace(box, {
+        width: depth,
+        height: height,
+        transform: 'rotateY(0deg)',
+        backgroundColor: color,
+        borderColor: "rgb(0, 0, 0, 0.2)"
+    });
+    
+    // Back face
+    createFace(box, {
+        width: width,
+        height: height,
+        transform: `rotateY(-90deg) translateZ(${-depth}px)`,
+        backgroundColor: color,
+        borderColor: "rgb(0, 0, 0, 0.2)"
+    });
+    
+    // Top face
+    createFace(box, {
+        width: depth,
+        height: width,
+        transform: `rotateX(90deg) translateZ(${-height}px)`,
+        backgroundColor: color,
+        borderColor: "rgb(0, 0, 0, 0.2)"
+    });
+    
+    // Bottom face
+    createFace(box, {
+        width: depth,
+        height: width,
+        transform: 'rotateX(90deg)',
+        backgroundColor: color,
+        borderColor: "rgb(0, 0, 0, 0.2)"
+    });
+    
+    // Add click event to select this box
+    if (isItem) {
+        box.addEventListener('click', () => selectItem(boxData.itemId));
+        box.style.cursor = 'pointer';
+    }
+    
+    scene.container.appendChild(box);
+    
+    scene.boxes.push({
+        element: box,
+        data: {
+            position: position,
+            width: width,
+            height: height,
+            depth: depth,
+            isItem: isItem,
+            isContainer: isContainer,
+            id: boxId,
+            originalColor: color,
+            boxData: boxData
+        }
+    });
+}
+function selectItem(itemId) {
+    // Reset all items to their original appearance
+    scene.boxes.forEach(box => {
+        if (box.data.isItem) {
+            const faces = box.element.children;
+            for (let i = 0; i < faces.length; i++) {
+                faces[i].style.backgroundColor = box.data.originalColor;
+                faces[i].style.opacity = "1";
+            }
+        }
+    });
+    
+    // Highlight the selected item
+    const selectedBox = scene.boxes.find(box => box.data.isItem && box.data.id === itemId);
+    if (selectedBox) {
+        const faces = selectedBox.element.children;
+        for (let i = 0; i < faces.length; i++) {
+            // Make the selected item more vibrant and opaque
+            faces[i].style.backgroundColor = selectedBox.data.originalColor.replace('0.56', '0.9');
+            faces[i].style.border = '0.8px solid black';
+        }
+        
+        // Dim other items
+        scene.boxes.forEach(box => {
+            if (box.data.isItem && box.data.id !== itemId) {
+                const faces = box.element.children;
+                for (let i = 0; i < faces.length; i++) {
+                    faces[i].style.opacity = "0.3";
+                }
+            }
+        });
+        
+        // Update info panel with selected item details
+        updateInfoPanel(selectedBox.data.boxData);
+    }
+}
+
+// Function to update info panel with item details
+function updateInfoPanel(itemData) {
+    let infoHtml = '';
+    
+    if (itemData.itemId) {
+        infoHtml = `
+            <h3>Item Details</h3>
+            <p>ID: ${itemData.itemId}</p>
+            <p>Name: ${itemData.name || 'N/A'}</p>
+            <p>Dimensions: ${itemData.width || 0} x ${itemData.depth || 0} x ${itemData.height || 0}</p>
+            <p>Priority: ${itemData.priority || 'N/A'}</p>
+            ${itemData.expiryDate ? `<p>Expires: ${itemData.expiryDate}</p>` : ''}
+            ${itemData.preferredZone ? `<p>Zone: ${itemData.preferredZone}</p>` : ''}
+            ${itemData.mass ? `<p>Mass: ${itemData.mass} kg</p>` : ''}
+        `;
+    } else {
+        infoHtml = `
+            <h3>Container Details</h3>
+            <p>Container: ${itemData.containerId || 'N/A'}</p>
+            <p>Dimensions: ${itemData.width || 0} x ${itemData.depth || 0} x ${itemData.height || 0}</p>
+            ${itemData.zone ? `<p>Zone: ${itemData.zone}</p>` : ''}
+        `;
+    }
+    
+    document.getElementById('info').innerHTML = infoHtml;
+}
+
+
+// Add this function to the updateContainerVisualization to automatically center when changing containers
+function updateContainerVisualization() {
+    if (!scene || !apiData || apiData.length < 3) {
+        console.warn("Scene or API data not ready yet");
+        return;
+    }
+    
+    // Clear existing boxes
+    scene.boxes.forEach(box => {
+        if (box.element && box.element.parentNode) {
+            box.element.parentNode.removeChild(box.element);
+        }
+    });
+    scene.boxes = [];
+    
+    // First create the container box
+    if (apiData[2]) {
+        const selectedContainer = apiData[2].find(item => item.containerId === selectedContainerId);
+        if (selectedContainer) {
+            createBox(selectedContainer, scene);
+        }
+    }
+    
+    // Then create the item boxes inside this container
+    if (apiData[0]) {
+        apiData[0].filter(item => item.containerId === selectedContainerId).forEach((placement) => {
+            // Find the item data for this placement
+            const itemData = apiData[1] ? apiData[1].find(item => item.itemId === placement.itemId) : null;
+            
+            if (itemData) {
+                // Merge placement data with item data
+                const mergedData = {
+                    ...placement,
+                    ...itemData
+                };
+                createBox(mergedData, scene);
+            } else {
+                // If item data not found, just use placement data
+                createBox(placement, scene);
+            }
+        });
+    }
+    
+    // Center the view on the container
+    centerCameraView();
+
+    
+    // Update info panel with selected container details
+    const selectedContainer = apiData[2] ? apiData[2].find(item => item.containerId === selectedContainerId) : null;
+    if (selectedContainer) {
+        updateInfoPanel(selectedContainer);
+    }
+    
+    // Update the items list in the sidebar
+    updateItemsList();
+}
+
+// Other utility functions
+function getRandomColor() {
+    let r = Math.floor(Math.random() * 256);
+    let g = Math.floor(Math.random() * 256);
+    let b = Math.floor(Math.random() * 256);
+    return `rgb(${r}, ${g}, ${b}, 0.56)`;
+}
+
+// Function to update the items list in the sidebar
+function updateItemsList() {
+    // Get all items in the selected container
+    const containerItems = apiData[0] ? 
+        apiData[0].filter(placement => placement.containerId === selectedContainerId) : [];
+    
+    // Create a container for the items list if it doesn't exist
+    let itemsListContainer = document.getElementById('items-list-container');
+    if (!itemsListContainer) {
+        itemsListContainer = document.createElement('div');
+        itemsListContainer.id = 'items-list-container';
+        itemsListContainer.className = 'items-list-container';
+        
+        // Add it after the container list
+        const sidebarElement = document.querySelector('.sidebar');
+        sidebarElement.appendChild(itemsListContainer);
+        
+        // Add some styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .items-list-container {
+                padding: 16px;
+                border-top: 1px solid #e0e3e8;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            
+            .items-list-title {
+                font-size: 16px;
+                font-weight: 600;
+                margin-bottom: 12px;
+            }
+            
+            .item-list-item {
+                padding: 8px;
+                margin-bottom: 6px;
+                border-radius: 4px;
+                cursor: pointer;
+                border-left: 4px solid #ddd;
+                background-color: #f9f9f9;
+            }
+            
+            .item-list-item:hover {
+                background-color: #f0f3ff;
+            }
+            
+            .item-list-item.selected {
+                background-color: #e7f0ff;
+                border-left-color: #4a90e2;
+            }
+            
+            .item-name {
+                font-weight: 500;
+                margin-bottom: 4px;
+            }
+            
+            .item-priority {
+                font-size: 12px;
+                color: #666;
+            }
+            
+            .high-priority {
+                border-left-color: #ff3232;
+            }
+            
+            .medium-priority {
+                border-left-color: #ffa500;
+            }
+            
+            .low-priority {
+                border-left-color: #0000ff;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Create the HTML for the items list
+    let itemsListHTML = `<div class="items-list-title">Items in Container ${selectedContainerId}</div>`;
+    
+    if (containerItems.length === 0) {
+        itemsListHTML += `<div class="no-results">No items in this container</div>`;
+    } else {
+        containerItems.forEach(placement => {
+            // Find the item data
+            const itemData = apiData[1] ? 
+                apiData[1].find(item => item.itemId === placement.itemId) : null;
+            
+            if (itemData) {
+                const priority = itemData.priority || 0;
+                let priorityClass = '';
+                
+                if (priority >= 90) {
+                    priorityClass = 'high-priority';
+                } else if (priority >= 50) {
+                    priorityClass = 'medium-priority';
+                } else {
+                    priorityClass = 'low-priority';
+                }
+                
+                itemsListHTML += `
+                    <div class="item-list-item ${priorityClass}" data-item-id="${itemData.itemId}">
+                        <div class="item-name">${itemData.name || 'Item ' + itemData.itemId}</div>
+                        <div class="item-priority">Priority: ${priority}</div>
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    itemsListContainer.innerHTML = itemsListHTML;
+    
+    // Add event listeners to the items
+    document.querySelectorAll('.item-list-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            
+            // Update selected item in the list
+            document.querySelectorAll('.item-list-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            
+            // Call the select item function
+            selectItem(itemId);
+        });
+    });
+}
+
+function initializeEnhancedVisualization() {
+    // Create a better info panel
+    const infoPanel = document.getElementById('info');
+    infoPanel.style.maxWidth = '300px';
+    infoPanel.style.minWidth = '250px';
+    infoPanel.style.overflow = 'auto';
+    infoPanel.style.maxHeight = '80vh';
+    
+    // Add a legend to the page
+    const legend = document.createElement('div');
+    legend.id = 'legend';
+    legend.style.position = 'absolute';
+    legend.style.bottom = '270px';
+    legend.style.right = '10px';
+    legend.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+    legend.style.padding = '12px';
+    legend.style.borderRadius = '5px';
+    legend.style.zIndex = '100';
+    
+    legend.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 5px;">Priority Legend</div>
+        <div style="display: flex; align-items: center; margin-bottom: 3px;">
+            <div style="width: 15px; height: 15px; background-color: rgba(255, 50, 50, 0.56); margin-right: 5px;"></div>
+            Priority (90-100)
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 3px;">
+            <div style="width: 15px; height: 15px; background-color: rgba(255, 165, 0, 0.56); margin-right: 5px;"></div>
+            Priority (75-89)
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 3px;">
+            <div style="width: 15px; height: 15px; background-color: rgba(255, 255, 0, 0.56); margin-right: 5px;"></div>
+            Priority (50-74)
+        </div>
+        <div style="display: flex; align-items: center; margin-bottom: 3px;">
+            <div style="width: 15px; height: 15px; background-color: rgba(0, 128, 0, 0.56); margin-right: 5px;"></div>
+            Priority (25-49)
+        </div>
+        <div style="display: flex; align-items: center;">
+            <div style="width: 15px; height: 15px; background-color: rgba(0, 0, 255, 0.56); margin-right: 5px;"></div>
+            Priority (0-24)
+        </div>
+    `;
+    
+    document.body.appendChild(legend);
+}
+
+function createFace(box, options) {
+    const face = document.createElement('div');
+    face.style.position = 'absolute';
+    face.style.width = `${options.width-2}px`;
+    face.style.height = `${options.height-2}px`;
+    face.style.backgroundColor = options.backgroundColor;
+    face.style.border = `0.4px solid ${options.borderColor}`;
+    face.style.transform = options.transform;
+    face.style.transformOrigin = 'left top';
+    face.style.backfaceVisibility = 'visible';
+    box.appendChild(face);
+    return face;
+}
+
+function updateScene(scene) {
+    // Get the selected container dimensions to use for centering
+    let containerWidth = 0;
+    let containerHeight = 0;
+    let containerDepth = 0;
+    
+    // Find the container box to get its dimensions
+    const containerBox = scene.boxes.find(box => box.data && box.data.isContainer);
+    if (containerBox) {
+        containerWidth = containerBox.data.width;
+        containerHeight = containerBox.data.height;
+        containerDepth = containerBox.data.depth;
+    }
+    
+    // Calculate the center offset values
+    const centerX = containerWidth / 2;
+    const centerY = containerHeight / 2;
+    const centerZ = containerDepth / 2;
+    
+    // Update the position of each box
+    scene.boxes.forEach(box => {
+        const boxData = box.data;
+        const element = box.element;
+        
+        // Calculate the position relative to the container's center
+        const x = boxData.position.x - centerX - 100;
+        const y = boxData.position.y - centerY;
+        const z = boxData.position.z - centerZ;
+        
+        // Apply transforms with centered coordinates
+        element.style.transform = `
+            translate3d(${scene.originX}px, ${scene.originY}px, 0)
+            rotateX(${scene.rotationX}deg)
+            rotateY(${scene.rotationY}deg)
+            scale3d(${scene.scale}, ${scene.scale}, ${scene.scale})
+            translate3d(${z}px, ${y}px, ${x}px)
+        `;
+        
+        element.style.transformOrigin = 'center center';
+    });
+}
+
+function toggleInvert() {
+    document.body.classList.toggle('inverted');
+}
+
+function extractDimensions(boxData) {
+    // Check if the data has position with start/end coordinates format
+    if (boxData.position && boxData.position.startCoordinates && boxData.position.endCoordinates) {
+        const startCoords = boxData.position.startCoordinates;
+        const endCoords = boxData.position.endCoordinates;
+        
+        return {
+            width: endCoords.width - startCoords.width,
+            depth: endCoords.depth - startCoords.depth,
+            height: endCoords.height - startCoords.height,
+            position: {
+                x: startCoords.width,
+                y: startCoords.height,
+                z: startCoords.depth
+            }
+        };
+    } 
+    // Alternative format: direct dimensions
+    else if (boxData) {
+        return {
+            width: boxData.width || 0,
+            depth: boxData.depth || 0,
+            height: boxData.height || 0,
+            position: {
+                x: boxData.x || (boxData.position ? boxData.position.x : 0),
+                y: boxData.y || (boxData.position ? boxData.position.y : 0),
+                z: boxData.z || (boxData.position ? boxData.position.z : 0)
+            }
+        };
+    }
+    // Default fallback
+    else {
+        console.warn("Unknown data format for item:", boxData);
+        return {
+            width: 100,
+            depth: 100,
+            height: 100,
+            position: { x: 0, y: 0, z: 0 }
+        };
+    }
+}
+// Add this function to recenter the camera view
+function centerCameraView() {
+    // Find the container in the scene
+    const containerBox = scene.boxes.find(box => box.data && box.data.isContainer);
+    
+    if (containerBox) {
+        // Reset the camera position and orientation
+        scene.rotationX = 200;
+        scene.rotationY = -290;
+        
+        // Calculate appropriate scale based on container size
+        const maxDimension = Math.max(
+            containerBox.data.width,
+            containerBox.data.height,
+            containerBox.data.depth
+        );
+        
+        // Scale inversely proportional to container size
+        // Larger containers need smaller scale to fit
+        const baseScale = 450; // Adjust this value based on your needs
+        scene.scale = baseScale / maxDimension;
+        
+        // Ensure scale is reasonable
+        if (scene.scale < 0.5) scene.scale = 0.5;
+        if (scene.scale > 5) scene.scale = 5;
+        
+        // Update the scene with new camera settings
+        updateScene(scene);
+    }
+}
+
+
+// First DOMContentLoaded event listener for the 3D visualization
+document.addEventListener('DOMContentLoaded', function() {
+    const rotationLimits = {
+        minX: 160,
+        maxX: 270,
+        minY: -360,
+        maxY: -220
+    }
+    
+    // Initialize the scene
+    scene = {
+        container: document.getElementById('container'),
+        rotationX: 200,
+        rotationY: -290,
+        scale: 1.7,
+        originX: window.innerWidth / 2,
+        originY: window.innerHeight / 1.7,
+        boxes: []
+    };
+    
+    // Define the API URLs
+    const placement = 'http://127.0.0.1:8000/api/placement/placements';
+    const item = 'http://127.0.0.1:8000/api/get/items';  
+    const container = 'http://127.0.0.1:8000/api/get/containers';
+    
+    // Use Promise.all to fetch from all APIs concurrently
+    Promise.all([
+        fetch(placement),
+        fetch(item),
+        fetch(container)
+    ])
+    .then(responses => {
+        // Check if all responses are OK
+        for (let response of responses) {
+            if (!response.ok) {
+                throw new Error('One or more requests failed');
+            }
+        }
+        // Parse all responses as JSON
+        return Promise.all(responses.map(response => response.json()));
+    })
+    .then(data => {
+        // Store the API data globally
+        apiData = data;
+        
+        // Initial visualization with default container
+        updateContainerVisualization();
+        
+        console.log('Data from API 2:', data[1]);
+        console.log('Data from API 3:', data[2]);
+    })
+    .catch(error => {
+        console.error('There was an issue with fetching data:', error);
+    });
+    
+    // Add event listeners for controls
+    document.getElementById('rotateLeft').addEventListener('click', () => {
+        scene.rotationY = Math.max(rotationLimits.minY, scene.rotationY - 15);
+        updateScene(scene);
+    });
+    
+    document.getElementById('rotateRight').addEventListener('click', () => {
+        scene.rotationY = Math.min(rotationLimits.maxY, scene.rotationY + 15);
+        updateScene(scene);
+    });
+    
+    document.getElementById('rotateUp').addEventListener('click', () => {
+        scene.rotationX = Math.max(rotationLimits.minX, scene.rotationX - 15);
+        updateScene(scene);
+    });
+    
+    document.getElementById('rotateDown').addEventListener('click', () => {
+        scene.rotationX = Math.min(rotationLimits.maxX, scene.rotationX + 15);
+        updateScene(scene);
+    });
+    
+    document.getElementById('zoomIn').addEventListener('click', () => {
+        scene.scale *= 1.2;
+        updateScene(scene);
+    });
+    
+    document.getElementById('zoomOut').addEventListener('click', () => {
+        scene.scale /= 1.2;
+        updateScene(scene);
+    });
+    
+    
+    
+    // Initial render
+    updateScene(scene);
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        scene.originX = window.innerWidth / 2;
+        scene.originY = window.innerHeight / 1.7;
+        updateScene(scene);
+    });
+    
+    // Also allow dragging to rotate
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    
+    scene.container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+            
+            scene.rotationY += deltaX * 0.5;
+            scene.rotationX += deltaY * 0.5;
+            
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+            updateScene(scene);
+        }
+    });
+    
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+    
+    // Also handle touch events for mobile
+    scene.container.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        e.preventDefault();
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+            const deltaX = e.touches[0].clientX - previousMousePosition.x;
+            const deltaY = e.touches[0].clientY - previousMousePosition.y;
+            
+            scene.rotationY += deltaX * 0.5;
+            scene.rotationX += deltaY * 0.5;
+            
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            updateScene(scene);
+            e.preventDefault();
+        }
+    });
+    
+    document.addEventListener('touchend', () => {
+        isDragging = false;
+    });
+    setTimeout(initializeEnhancedVisualization, 500);
+});
+
+// Second DOMContentLoaded event listener for the container list
+document.addEventListener('DOMContentLoaded', function() {
+    const containerList = document.getElementById('container-list');
+    const searchInput = document.getElementById('search-input');
+    
+    let containers = [];
+    let selectedContainer = null;
+    
+    // Fetch containers from API
+    async function fetchContainers() {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/get/containers');
+            
+            if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+            
+            containers = await response.json();
+            renderContainerList(containers);
+        } catch (error) {
+            containerList.innerHTML = `
+                <div class="error-message">
+                    Error loading containers: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    // Render container list
+    function renderContainerList(containersToRender) {
+        if (containersToRender.length === 0) {
+            containerList.innerHTML = `
+                <div class="no-results">
+                    No containers found
+                </div>
+            `;
+            return;
+        }
+        
+        containerList.innerHTML = containersToRender.map(container => `
+            <div class="container-item ${selectedContainer && selectedContainer.containerId === container.containerId ? 'selected' : ''}" 
+                 data-container-id="${container.containerId}">
+                <div class="container-id">${container.containerId}</div>
+                <div class="container-zone">Zone: ${container.zone}</div>
+                <div class="container-details">
+                    <span>W: ${container.width}cm</span>
+                    <span>D: ${container.depth}cm</span>
+                    <span>H: ${container.height}cm</span>
+                </div>
+            </div>
+        `).join('');
+        
+        // Add click event listeners
+        document.querySelectorAll('.container-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const containerId = this.dataset.containerId;
+                console.log(containerId);
+                selectContainer(containerId);
+            });
+        });
+    }
+    
+    // Select container - now it will call the globally defined updateContainerVisualization
+    function selectContainer(containerId) {
+        selectedContainer = containers.find(container => container.containerId === containerId);
+        
+        // Update UI to show selected container
+        document.querySelectorAll('.container-item').forEach(item => {
+            item.classList.remove('selected');
+            if (item.dataset.containerId === containerId) {
+                item.classList.add('selected');
+            }
+        });
+        
+        // Update the selectedContainerId and redraw the visualization
+        selectedContainerId = containerId;
+        updateContainerVisualization(); // This now calls the global function
+    }
+    
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const filteredContainers = containers.filter(container => 
+            container.containerId.toLowerCase().includes(searchTerm) ||
+            container.zone.toLowerCase().includes(searchTerm)
+        );
+        
+        renderContainerList(filteredContainers);
+    });
+    
+    // Initial fetch
+    fetchContainers();
+
+
+    // Add this function to create the global search functionality
+function initializeItemSearch() {
+    // Create a new search bar for items in the sidebar header
+    const sidebarHeader = document.querySelector('.sidebar-header');
+    
+    const itemSearchContainer = document.createElement('div');
+    itemSearchContainer.className = 'search-container item-search-container';
+    itemSearchContainer.style.marginTop = '12px';
+    
+    itemSearchContainer.innerHTML = `
+        <input type="text" id="item-search-input" class="search-input" placeholder="Search items by ID, name, zone">
+        <div class="search-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+        </div>
+    `;
+    
+    sidebarHeader.appendChild(itemSearchContainer);
+    
+    // Create a container for search results
+    const searchResultsContainer = document.createElement('div');
+    searchResultsContainer.id = 'item-search-results';
+    searchResultsContainer.className = 'item-search-results';
+    searchResultsContainer.style.display = 'none';
+    
+    // Add styles for the search results
+    const style = document.createElement('style');
+    style.textContent = `
+        .item-search-results {
+            position: absolute;
+            top: 150px;
+            left: 16px;
+            right: 16px;
+            background: white;
+            border: 1px solid #e0e3e8;
+            border-radius: 6px;
+            max-height: 60vh;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-result-item {
+            padding: 12px;
+            border-bottom: 1px solid #e0e3e8;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background-color: #f0f3ff;
+        }
+        
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .search-result-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .search-result-container {
+            font-size: 13px;
+            color: #4a90e2;
+            margin-bottom: 4px;
+        }
+        
+        .search-result-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .search-result-detail {
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-result-icon {
+            margin-right: 4px;
+            opacity: 0.7;
+        }
+        
+        .search-no-results {
+            padding: 16px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .item-highlight-priority-high { border-left: 4px solid #ff3232; }
+        .item-highlight-priority-medium { border-left: 4px solid #ffa500; }
+        .item-highlight-priority-low { border-left: 4px solid #0000ff; }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(searchResultsContainer);
+    
+    // Add event listener for the search input
+    const itemSearchInput = document.getElementById('item-search-input');
+    itemSearchInput.addEventListener('input', performItemSearch);
+    
+    // Close search results when clicking outside
+    document.addEventListener('click', function(event) {
+        const searchResults = document.getElementById('item-search-results');
+        if (!itemSearchInput.contains(event.target) && !searchResults.contains(event.target)) {
+            searchResults.style.display = 'none';
+        }
+    });
+}
+
+// Function to perform the item search
+function performItemSearch() {
+    const searchTerm = document.getElementById('item-search-input').value.toLowerCase().trim();
+    const searchResults = document.getElementById('item-search-results');
+    
+    // If search term is empty, hide results
+    if (searchTerm.length < 2) {
+        searchResults.style.display = 'none';
+        return;
+    }
+    
+    // Get all items from apiData
+    const items = apiData[1] || [];
+    const placements = apiData[0] || [];
+    const containers = apiData[2] || [];
+    
+    // Filter items by search term
+    const filteredItems = items.filter(item => {
+        // Search by ID, name, and other properties
+        return (
+            (item.itemId && item.itemId.toLowerCase().includes(searchTerm)) ||
+            (item.name && item.name.toLowerCase().includes(searchTerm)) ||
+            (item.preferredZone && item.preferredZone.toLowerCase().includes(searchTerm))
+        );
+    });
+    
+    // Display the search results
+    if (filteredItems.length === 0) {
+        searchResults.innerHTML = `<div class="search-no-results">No items found matching "${searchTerm}"</div>`;
+    } else {
+        searchResults.innerHTML = filteredItems.map(item => {
+            // Find where this item is placed
+            const placement = placements.find(p => p.itemId === item.itemId);
+            const containerId = placement ? placement.containerId : 'Not placed';
+            const container = containers.find(c => c.containerId === containerId);
+            const containerZone = container ? container.zone : '';
+            
+            // Determine priority class
+            let priorityClass = '';
+            const priority = item.priority || 0;
+            
+            if (priority >= 90) {
+                priorityClass = 'item-highlight-priority-high';
+            } else if (priority >= 50) {
+                priorityClass = 'item-highlight-priority-medium';
+            } else {
+                priorityClass = 'item-highlight-priority-low';
+            }
+            
+            return `
+                <div class="search-result-item ${priorityClass}" data-item-id="${item.itemId}" data-container-id="${containerId}">
+                    <div class="search-result-title">${item.name || 'Item ' + item.itemId}</div>
+                    <div class="search-result-container">
+                        <span>Container: ${containerId}</span>
+                        ${containerZone ? ` (Zone: ${containerZone})` : ''}
+                    </div>
+                    <div class="search-result-details">
+                        <div class="search-result-detail">
+                            <span class="search-result-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 19l9 2-9-18-9 18 9-2z"></path>
+                                </svg>
+                            </span>
+                            Priority: ${priority}
+                        </div>
+                        <div class="search-result-detail">
+                            <span class="search-result-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                            </span>
+                            Dims: ${item.width || 0}×${item.depth || 0}×${item.height || 0}
+                        </div>
+                        ${item.mass ? `
+                            <div class="search-result-detail">
+                                <span class="search-result-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                    </svg>
+                                </span>
+                                Mass: ${item.mass} kg
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // Add event listeners to the search results
+        document.querySelectorAll('.search-result-item').forEach(result => {
+            result.addEventListener('click', function() {
+                const itemId = this.dataset.itemId;
+                const containerId = this.dataset.containerId;
+                
+                // First switch to the container
+                if (containerId !== 'Not placed' && containerId !== selectedContainerId) {
+                    // Update the selected container
+                    selectedContainerId = containerId;
+                    updateContainerVisualization();
+                    
+                    // Update UI to show selected container
+                    document.querySelectorAll('.container-item').forEach(item => {
+                        item.classList.remove('selected');
+                        if (item.dataset.containerId === containerId) {
+                            item.classList.add('selected');
+                        }
+                    });
+                }
+                
+                // Then highlight the item
+                if (containerId !== 'Not placed') {
+                    selectItem(itemId);
+                }
+                
+                // Hide search results
+                searchResults.style.display = 'none';
+                
+                // Clear search input
+                document.getElementById('item-search-input').value = '';
+            });
+        });
+    }
+    
+    // Show the search results
+    searchResults.style.display = 'block';
+}
+
+
+    
+    // Add this at the end to initialize the item search
+    setTimeout(initializeItemSearch, 500);
+ 
+    setTimeout(() => {
+        const resetButton = document.getElementById('reset');
+        if (resetButton) {
+            resetButton.removeEventListener('click', null);
+            resetButton.addEventListener('click', centerCameraView);
+        }
+    }, 500);
+});
+
+
+document.getElementById('goBackBtn').addEventListener('click', function () {
+  window.history.back();
+});
+
+    </script>
+    
+</body>
+</html>

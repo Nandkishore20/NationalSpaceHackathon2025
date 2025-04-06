@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargo Stowage Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chat.js"></script>
+    <style>
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #555555;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .placement-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .placement-card:hover {
+            transform: translateY(-5px);
+        }
+        .navbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #f3eded;
+          color: rgb(124, 124, 124);
+          padding: 10px 20px;
+          outline: #333;
+          margin: 0 0px;
+        }
+        
+        .navbar-logo {
+          font-size: 24px;
+          font-weight: bold;
+        }
+        
+        .navbar-links {
+          display: flex;
+          list-style: none;
+          font-size: 18px;
+          font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+          font-weight: 800;
+          padding: 0 10px;
+          border: #333;
+          
+        }
+        
+        .navbar-links li {
+          padding: 0 10px;
+          margin: 10px 10px;
+        }
+        
+        .navbar-links a {
+          color: rgb(54, 54, 54);
+          text-decoration: none;
+        }
+        
+        .navbar-links a:hover {
+          color: #383838;
+        }
+        
+        /* Hamburger menu (hidden by default) */
+        .navbar-toggle {
+          display: none;
+          font-size: 24px;
+          cursor: pointer;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+          .navbar-links {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            position: absolute;
+            top: 49px;
+            left: 0;
+            background-color: #e2e2e2;
+            padding: 10px 0;
+          }
+          
+          .navbar-links.active {
+            display: flex;
+          }
+          
+          .navbar-links li {
+            padding: 10px 20px;
+          }
+          
+          .navbar-toggle {
+            display: block;
+          }
+          
+          .navbar {
+            flex-wrap: wrap;
+            position: relative;
+          }
+        }
+      </style>  
+      <script>
+        function toggleNav() {
+          const navLinks = document.getElementById('navLinks');
+          navLinks.classList.toggle('active');
+        }
+      </script> 
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="navbar">
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="index.html" style="border-bottom: 2px solid #272626;" >Placemnt(Home)</a></li>
+          <li><a href="Search.html" ">Search & Retriveal</a></li>
+          <li><a href="waste.html">Waste Management</a></li>
+          <li><a href="simulate.html" >Simulation</a></li>
+          <li><a href="log.html" >Logs</a></li>
+          <li><a href="visual.html" class="bg-white p-[10px] rounded-[10px]">3-D Visualization</a></li>
+          <button id="refreshButton" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-0 rounded-md transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh Data
+        </button>
+        </ul>
+        <div class="navbar-logo">Home/Placement</div>
+        <div class="navbar-toggle" onclick="toggleNav()">☰</div>
+      </nav>
+                
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Dashboard Header -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Total Items</h3>
+                <div class="flex items-center">
+                    <div class="bg-gray-100 p-3 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span id="totalItems" class="text-2xl font-bold">0</span>
+                        <span class="text-sm text-gray-500 block">Available Items</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Containers</h3>
+                <div class="flex items-center">
+                    <div class="bg-gray-100 p-3 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span id="totalContainers" class="text-2xl font-bold">0</span>
+                        <span class="text-sm text-gray-500 block">Available Containers</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-lg shadow-md p-4">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2">Placements</h3>
+                <div class="flex items-center">
+                    <div class="bg-purple-100 p-3 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span id="totalPlacements" class="text-2xl font-bold">0</span>
+                        <span class="text-sm text-gray-500 block">Completed Placements</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column - File Upload and Actions -->
+            <div class="col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Upload Files</h2>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">Upload Items CSV</label>
+                        <input type="file" id="itemsFile" accept=".csv" 
+                               class="w-full p-2 border rounded-md">
+                        <button onclick="uploadItems()" 
+                                class="mt-2 w-full bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition">
+                            Upload Items
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">Upload Containers CSV</label>
+                        <input type="file" id="containersFile" accept=".csv" 
+                               class="w-full p-2 border rounded-md">
+                        <button onclick="uploadContainers()" 
+                                class="mt-2 w-full bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition">
+                            Upload Containers
+                        </button>
+                    </div>
+                    
+                    <hr class="my-4 border-gray-200">
+                    
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Actions</h2>
+                    
+                    <button id="autoPlaceButton" class="w-full bg-stone-700 hover:bg-stone-600 text-white p-3 rounded-md mb-3 transition flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Run Placement
+                    </button>
+                    
+                    <button id="simulateButton" class="w-full bg-stone-500 hover:bg-stone-600 text-white p-3 rounded-md transition flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        Simulate Placement
+                    </button>
+                    
+                    <div id="message" class="mt-4 p-3 rounded-md hidden"></div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800">Statistics</h2>
+                   
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div class="bg-gray-100 p-3 rounded-md">
+                            <span class="block text-sm text-gray-500">Placement Efficiency</span>
+                            <span id="efficiencyRate" class="text-lg font-bold">0%</span>
+                        </div>
+                        <div class="bg-gray-100 p-3 rounded-md">
+                            <span class="block text-sm text-gray-500">Space Utilization</span>
+                            <span id="utilizationRate" class="text-lg font-bold">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Middle Column - Unplaced Items -->
+            <div class="col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 h-full overflow-hidden flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">Unplaced Items</h2>
+                        <div class="flex items-center">
+                            <input type="text" id="itemSearch" placeholder="Search items..." 
+                                   class="border rounded-md p-1 text-sm mr-2">
+                            <select id="itemSort" class="border rounded-md p-1 text-sm">
+                                <option value="priority">Sort by Priority</option>
+                                <option value="id">Sort by ID</option>
+                                <option value="name">Sort by Name</option>
+                                <option value="expiry">Sort by Expiry</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="unplacedItems" class="overflow-y-auto flex-grow">
+                        <div class="flex justify-center items-center h-full text-gray-500">
+                            Loading items...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Placements -->
+            <div class="col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 h-full overflow-hidden flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">Recent Placements</h2>
+                        <select id="containerFilter" class="border rounded-md p-1 text-sm">
+                            <option value="all">All Containers</option>
+                        </select>
+                    </div>
+                    
+                    <div id="placementsList" class="overflow-y-auto flex-grow">
+                        <div class="flex justify-center items-center h-full text-gray-500">
+                            No placements found
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simulation Modal -->
+    <div id="simulationModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Simulate Placement</h3>
+                <button id="closeSimulationModal" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-gray-600 mb-4">Select items and containers to simulate placement without making actual changes.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <h4 class="font-medium mb-2">Available Items</h4>
+                        <div id="simulationItemsList" class="border rounded-md p-2 h-60 overflow-y-auto">
+                            <div class="flex justify-center items-center h-full text-gray-500">
+                                Loading items...
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-medium mb-2">Available Containers</h4>
+                        <div id="simulationContainersList" class="border rounded-md p-2 h-60 overflow-y-auto">
+                            <div class="flex justify-center items-center h-full text-gray-500">
+                                Loading containers...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="runSimulationButton" class="w-full bg-stone-500 hover:bg-stone-600 text-white p-2 rounded-md transition">
+                    Run Simulation
+                </button>
+            </div>
+            
+            <div id="simulationResults" class="border-t pt-4 hidden">
+                <h4 class="font-medium mb-2">Simulation Results</h4>
+                <div id="simulationResultsList" class="max-h-60 overflow-y-auto">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       // Global variables to store data
+let allItems = [];
+let allContainers = [];
+let allPlacements = [];
+let selectedSimulationItems = [];
+let selectedSimulationContainers = [];
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    fetchAllData();
+    setupEventListeners();
+});
+
+// Set up all event listeners
+function setupEventListeners() {
+    document.getElementById('refreshButton').addEventListener('click', fetchAllData);
+    document.getElementById('autoPlaceButton').addEventListener('click', runAutoPlacement);
+    document.getElementById('simulateButton').addEventListener('click', openSimulationModal);
+    document.getElementById('closeSimulationModal').addEventListener('click', closeSimulationModal);
+    document.getElementById('runSimulationButton').addEventListener('click', runSimulation);
+    document.getElementById('itemSearch').addEventListener('input', filterItems);
+    document.getElementById('itemSort').addEventListener('change', sortItems);
+    document.getElementById('containerFilter').addEventListener('change', filterPlacements);
+}
+
+// Fetch all data from the API
+async function fetchAllData() {
+    try {
+        showMessage('Loading data...', 'info');
+        await Promise.all([
+            fetchItems(),
+            fetchContainers(),
+            fetchPlacements()
+        ]);
+        updateDashboardStats();
+        hideMessage();
+    } catch (error) {
+        showMessage('Failed to load data: ' + error.message, 'error');
+    }
+}
+
+// Fetch items from the API
+async function fetchItems() {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/api/get/items');
+        if (!response.ok) {
+            throw new Error('Failed to fetch items');
+        }
+        allItems = await response.json();
+        renderUnplacedItems();
+        return allItems;
+    } catch (error) {
+        console.error('Error fetching items:', error);
+        throw error;
+    }
+}
+
+// Fetch containers from the API
+async function fetchContainers() {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/api/get/containers');
+        if (!response.ok) {
+            throw new Error('Failed to fetch containers');
+        }
+        allContainers = await response.json();
+        updateContainerFilter();
+        return allContainers;
+    } catch (error) {
+        console.error('Error fetching containers:', error);
+        throw error;
+    }
+}
+
+// Fetch placements from the API
+async function fetchPlacements() {
+    try {
+        const response = await fetch('http://127.0.0.1:8000/api/placement/placements');
+        if (!response.ok) {
+            throw new Error('Failed to fetch placements');
+        }
+        allPlacements = await response.json();
+        renderPlacements();
+        return allPlacements;
+    } catch (error) {
+        console.error('Error fetching placements:', error);
+        throw error;
+    }
+}
+
+// Upload items CSV
+async function uploadItems() {
+    const fileInput = document.getElementById('itemsFile');
+    
+    if (!fileInput.files.length) {
+        showMessage('Please select a file', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('items_file', fileInput.files[0]);
+
+    try {
+        showMessage('Uploading items...', 'info');
+        const response = await fetch('http://127.0.0.1:8000/api/import/items', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+            showMessage(result.message, 'success');
+            await fetchItems();
+            updateDashboardStats();
+        } else {
+            showMessage('Error: ' + (result.detail || 'Upload failed'), 'error');
+        }
+    } catch (error) {
+        showMessage('Upload failed: ' + error.message, 'error');
+    }
+}
+
+// Upload containers CSV
+async function uploadContainers() {
+    const fileInput = document.getElementById('containersFile');
+    
+    if (!fileInput.files.length) {
+        showMessage('Please select a file', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('containers_file', fileInput.files[0]);
+
+    try {
+        showMessage('Uploading containers...', 'info');
+        const response = await fetch('http://127.0.0.1:8000/api/import/containers', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+            showMessage(result.message, 'success');
+            await fetchContainers();
+            updateDashboardStats();
+        } else {
+            showMessage('Error: ' + (result.detail || 'Upload failed'), 'error');
+        }
+    } catch (error) {
+        showMessage('Upload failed: ' + error.message, 'error');
+    }
+}
+
+// Run auto-placement
+async function runAutoPlacement() {
+    try {
+        showMessage('Running auto-placement...', 'info');
+        const response = await fetch('http://127.0.0.1:8000/api/placement/auto-place', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to run auto-placement');
+        }
+        
+        const result = await response.json();
+        showMessage('Auto-placement completed successfully!', 'success');
+        
+        // Refresh placements
+        await fetchPlacements();
+        await fetchItems();
+        updateDashboardStats();
+        
+    } catch (error) {
+        showMessage('Auto-placement failed: ' + error.message, 'error');
+    }
+}
+
+// Open simulation modal
+function openSimulationModal() {
+    document.getElementById('simulationModal').classList.remove('hidden');
+    document.getElementById('simulationResults').classList.add('hidden');
+    
+    // Reset selections
+    selectedSimulationItems = [];
+    selectedSimulationContainers = [];
+    
+    // Render items and containers for simulation
+    renderSimulationItems();
+    renderSimulationContainers();
+}
+
+// Close simulation modal
+function closeSimulationModal() {
+    document.getElementById('simulationModal').classList.add('hidden');
+}
+
+// Run simulation
+async function runSimulation() {
+    try {
+        if (selectedSimulationItems.length === 0) {
+            alert('Please select at least one item for simulation');
+            return;
+        }
+        
+        if (selectedSimulationContainers.length === 0) {
+            alert('Please select at least one container for simulation');
+            return;
+        }
+        
+        const payload = {
+            items: selectedSimulationItems,
+            containers: selectedSimulationContainers
+        };
+        
+        document.getElementById('runSimulationButton').textContent = 'Running simulation...';
+        document.getElementById('runSimulationButton').disabled = true;
+        
+        const response = await fetch('http://127.0.0.1:8000/api/placement/simulate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Simulation failed');
+        }
+        
+        const results = await response.json();
+        renderSimulationResults(results);
+        
+    } catch (error) {
+        alert('Simulation failed: ' + error.message);
+    } finally {
+        document.getElementById('runSimulationButton').textContent = 'Run Simulation';
+        document.getElementById('runSimulationButton').disabled = false;
+    }
+}
+
+// Render unplaced items
+function renderUnplacedItems() {
+    const container = document.getElementById('unplacedItems');
+    
+    // Filter out items that are already placed
+    const placedItemIds = new Set(allPlacements.map(p => p.itemId));
+    const unplacedItems = allItems.filter(item => !placedItemIds.has(item.itemId));
+    
+    if (unplacedItems.length === 0) {
+        container.innerHTML = `
+            <div class="flex justify-center items-center h-full text-gray-500">
+                No unplaced items found
+            </div>
+        `;
+        return;
+    }
+    
+    // Apply search filter if any
+    const searchTerm = document.getElementById('itemSearch').value.toLowerCase();
+    const filteredItems = searchTerm ? 
+        unplacedItems.filter(item => 
+            item.itemId.toLowerCase().includes(searchTerm) || 
+            (item.name && item.name.toLowerCase().includes(searchTerm))
+        ) : 
+        unplacedItems;
+    
+    // Apply sorting
+    const sortOption = document.getElementById('itemSort').value;
+    
+    switch(sortOption) {
+        case 'priority':
+            filteredItems.sort((b, a) => b.priority - a.priority);
+            break;
+        case 'id':
+            filteredItems.sort((a, b) => a.itemId.localeCompare(b.itemId));
+            break;
+        case 'name':
+            filteredItems.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            break;
+        case 'expiry':
+            filteredItems.sort((a, b) => new Date(a.expiryDate || 0) - new Date(b.expiryDate || 0));
+            break;
+    }
+    
+    // Render the items
+    container.innerHTML = filteredItems.map(item => `
+        <div class="bg-gray-50 p-4 rounded-lg mb-3 shadow-sm hover:shadow-md transition">
+            <div class="flex justify-between">
+                <div class="font-medium">${item.name || 'Unnamed Item'}</div>
+                <div class="text-gray-500 text-sm">ID: ${item.itemId}</div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mt-2 text-sm">
+                <div>
+                    <span class="text-gray-500">Size:</span> 
+                    ${item.width || 0}×${item.depth || 0}×${item.height || 0}
+                </div>
+                <div>
+                    <span class="text-gray-500">Priority:</span>
+                    <span class="ml-1 ${getPriorityColor(item.priority || 0)}">${item.priority || 0}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">Expiry:</span> 
+                    ${formatDate(item.expiryDate)}
+                </div>
+                <div>
+                    <span class="text-gray-500">Zone:</span> 
+                    ${item.preferredZone || 'None'}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Render placements
+function renderPlacements() {
+    const container = document.getElementById('placementsList');
+    const containerFilter = document.getElementById('containerFilter').value;
+    
+    if (allPlacements.length === 0) {
+        container.innerHTML = `
+            <div class="flex justify-center items-center h-full text-gray-500">
+                No placements found
+            </div>
+        `;
+        return;
+    }
+    
+    // Apply container filter if not showing all
+    const filteredPlacements = containerFilter !== 'all' ? 
+        allPlacements.filter(p => p.containerId === containerFilter) : 
+        allPlacements;
+    
+    // Sort by most recent placements first
+    filteredPlacements.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+    
+    // Find the corresponding items
+    const placements = filteredPlacements.map(placement => {
+        const item = allItems.find(i => i.itemId === placement.itemId) || { 
+            name: 'Unknown Item',
+            priority: 0 
+        };
+        
+        return { ...placement, itemName: item.name || 'Unknown Item', priority: item.priority || 0 };
+    });
+    
+    container.innerHTML = placements.map(p => `
+        <div class="bg-gray-50 p-4 rounded-lg mb-3 shadow-sm placement-card">
+            <div class="flex justify-between">
+                <div class="font-medium">${p.itemName}</div>
+                <div class="text-gray-500 text-sm">ID: ${p.itemId}</div>
+            </div>
+            <div class="mt-2 text-sm">
+                <div>
+                    <span class="text-gray-500">Container:</span> ${p.containerId}
+                </div>
+                <div>
+                    <span class="text-gray-500">Position:</span> 
+                    ${p.position && p.position.startCoordinates ? 
+                        `(${p.position.startCoordinates.width || 0}, ${p.position.startCoordinates.depth || 0}, ${p.position.startCoordinates.height || 0}) to
+                        (${p.position.endCoordinates.width || 0}, ${p.position.endCoordinates.depth || 0}, ${p.position.endCoordinates.height || 0})` 
+                        : 'Position not available'}
+                </div>
+                <div>
+                    <span class="text-gray-500">Rotated:</span> ${p.rotated ? 'Yes' : 'No'}
+                </div>
+                <div>
+                    <span class="text-gray-500">Timestamp:</span> ${formatDateTime(p.timestamp)}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Render items for simulation
+function renderSimulationItems() {
+    const container = document.getElementById('simulationItemsList');
+    
+    // Filter out items that are already placed
+    const placedItemIds = new Set(allPlacements.map(p => p.itemId));
+    const unplacedItems = allItems.filter(item => !placedItemIds.has(item.itemId));
+    
+    if (unplacedItems.length === 0) {
+        container.innerHTML = `
+            <div class="text-gray-500 text-center p-4">
+                No items available for simulation
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = unplacedItems.map(item => `
+        <div class="flex items-center p-2 border-b">
+            <input type="checkbox" id="sim-item-${item.itemId}" class="simulation-item-checkbox mr-2" 
+                  data-item-id="${item.itemId}" ${selectedSimulationItems.includes(item.itemId) ? 'checked' : ''}>
+            <label for="sim-item-${item.itemId}" class="flex-grow">
+                ${item.name || 'Unnamed Item'} (ID: ${item.itemId})
+            </label>
+        </div>
+    `).join('');
+    
+    // Add event listeners to checkboxes
+    document.querySelectorAll('.simulation-item-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const itemId = this.getAttribute('data-item-id');
+            if (this.checked) {
+                if (!selectedSimulationItems.includes(itemId)) {
+                    selectedSimulationItems.push(itemId);
+                }
+            } else {
+                selectedSimulationItems = selectedSimulationItems.filter(id => id !== itemId);
+            }
+        });
+    });
+}
+
+// Render containers for simulation
+function renderSimulationContainers() {
+    const container = document.getElementById('simulationContainersList');
+    
+    if (allContainers.length === 0) {
+        container.innerHTML = `
+            <div class="text-gray-500 text-center p-4">
+                No containers available
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = allContainers.map(container => `
+        <div class="flex items-center p-2 border-b">
+            <input type="checkbox" id="sim-container-${container.containerId}" class="simulation-container-checkbox mr-2" 
+                  data-container-id="${container.containerId}" ${selectedSimulationContainers.includes(container.containerId) ? 'checked' : ''}>
+            <label for="sim-container-${container.containerId}" class="flex-grow">
+                ${container.containerId} (Zone: ${container.zone || 'None'})
+            </label>
+        </div>
+    `).join('');
+    
+    // Add event listeners to checkboxes
+    document.querySelectorAll('.simulation-container-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const containerId = this.getAttribute('data-container-id');
+            if (this.checked) {
+                if (!selectedSimulationContainers.includes(containerId)) {
+                    selectedSimulationContainers.push(containerId);
+                }
+            } else {
+                selectedSimulationContainers = selectedSimulationContainers.filter(id => id !== containerId);
+            }
+        });
+    });
+}
+
+// Render simulation results
+function renderSimulationResults(results) {
+    const resultsContainer = document.getElementById('simulationResults');
+    const resultsList = document.getElementById('simulationResultsList');
+    
+    resultsContainer.classList.remove('hidden');
+    
+    if (!results || results.length === 0) {
+        resultsList.innerHTML = `
+            <div class="p-4 bg-stone-50 rounded-md text-stone-700">
+                No valid placements found in the simulation.
+            </div>
+        `;
+        return;
+    }
+    
+    const resultsHTML = results.map(result => {
+        const item = allItems.find(i => i.itemId === result.itemId) || { name: 'Unknown Item' };
+        
+        return `
+            <div class="bg-gray-50 p-3 rounded-md mb-3">
+                <div class="font-medium text-gray-800">${item.name || 'Unknown Item'} (ID: ${result.itemId})</div>
+                <div class="text-sm mt-1">
+                    <div>Container: ${result.containerId}</div>
+                    <div>Position: ${result.position && result.position.startCoordinates ? 
+                        `(${result.position.startCoordinates.width || 0}, ${result.position.startCoordinates.depth || 0}, ${result.position.startCoordinates.height || 0}) to
+                        (${result.position.endCoordinates.width || 0}, ${result.position.endCoordinates.depth || 0}, ${result.position.endCoordinates.height || 0})` 
+                        : 'Position not available'}</div>
+                    <div>Rotated: ${result.rotated ? 'Yes' : 'No'}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    resultsList.innerHTML = resultsHTML;
+}
+
+// Update the container filter dropdown
+function updateContainerFilter() {
+    const filterSelect = document.getElementById('containerFilter');
+    const currentValue = filterSelect.value;
+    
+    // Clear all options except "All Containers"
+    while (filterSelect.options.length > 1) {
+        filterSelect.remove(1);
+    }
+    
+    // Add container options
+    allContainers.forEach(container => {
+        const option = document.createElement('option');
+        option.value = container.containerId;
+        option.textContent = `${container.containerId} (${container.zone || 'No Zone'})`;
+        filterSelect.appendChild(option);
+    });
+    
+    // Restore previous selection if it exists
+    if (currentValue && filterSelect.querySelector(`option[value="${currentValue}"]`)) {
+        filterSelect.value = currentValue;
+    }
+}
+
+// Update dashboard statistics
+function updateDashboardStats() {
+    document.getElementById('totalItems').textContent = allItems.length;
+    document.getElementById('totalContainers').textContent = allContainers.length;
+    document.getElementById('totalPlacements').textContent = allPlacements.length;
+    
+    const placedItemIds = new Set(allPlacements.map(p => p.itemId));
+    const unplacedItemsCount = allItems.filter(item => !placedItemIds.has(item.itemId)).length;
+    
+    // Calculate efficiency and utilization rates
+    const efficiencyRate = allItems.length > 0 ? 
+        Math.round((placedItemIds.size / allItems.length) * 100) : 0;
+    
+    let totalVolume = 0;
+    let usedVolume = 0;
+    
+    allContainers.forEach(container => {
+        totalVolume += (container.width || 0) * (container.depth || 0) * (container.height || 0);
+    });
+    
+    allPlacements.forEach(placement => {
+        if (placement.position && placement.position.startCoordinates && placement.position.endCoordinates) {
+            const start = placement.position.startCoordinates;
+            const end = placement.position.endCoordinates;
+            usedVolume += (end.width - start.width) * (end.depth - start.depth) * (end.height - start.height);
+        }
+    });
+    
+    const utilizationRate = totalVolume > 0 ? 
+        Math.round((usedVolume / totalVolume) * 100) : 0;
+    
+    document.getElementById('efficiencyRate').textContent = `${efficiencyRate}%`;
+    document.getElementById('utilizationRate').textContent = `${utilizationRate}%`;
+    
+}
+
+
+// Filter items based on search term
+function filterItems() {
+    renderUnplacedItems();
+}
+
+// Sort items based on selected option
+function sortItems() {
+    renderUnplacedItems();
+}
+
+// Filter placements based on container
+function filterPlacements() {
+    renderPlacements();
+}
+
+// Format date
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleDateString();
+    } catch (e) {
+        return 'N/A';
+    }
+}
+
+// Format date and time
+function formatDateTime(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    } catch (e) {
+        return 'N/A';
+    }
+}
+
+// Get priority color class
+function getPriorityColor(priority) {
+    if (priority >= 90) return 'text-red-600 font-bold';
+    if (priority >= 70) return 'text-orange-500 font-semibold';
+    if (priority >= 50) return 'text-stone-600';
+    return 'text-gray-600';
+}
+
+// Show message
+function showMessage(message, type = 'info') {
+    const messageEl = document.getElementById('message');
+    if (!messageEl) return;
+    
+    messageEl.classList.remove('hidden', 'bg-gray-100', 'text-gray-800', 'bg-red-100', 'text-red-800', 'bg-gray-100', 'text-gray-800');
+    
+    switch (type) {
+        case 'success':
+            messageEl.classList.add('bg-gray-100', 'text-gray-800');
+            break;
+        case 'error':
+            messageEl.classList.add('bg-red-100', 'text-red-800');
+            break;
+        case 'info':
+        default:
+            messageEl.classList.add('bg-gray-100', 'text-gray-800');
+            break;
+    }
+    
+    messageEl.textContent = message;
+    messageEl.classList.remove('hidden');
+    
+    // Auto-hide success messages after 5 seconds
+    if (type === 'success') {
+        setTimeout(() => {
+            if (messageEl) messageEl.classList.add('hidden');
+        }, 5000);
+    }
+}
+
+// Hide message
+function hideMessage() {
+    const messageEl = document.getElementById('message');
+    if (messageEl) messageEl.classList.add('hidden');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- DateRangePicker -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/litepicker/2.0.12/litepicker.js"></script>
+    <style>
+        .navbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #f3eded;
+          color: rgb(124, 124, 124);
+          padding: 10px 20px;
+          outline: #333;
+          margin: 0 0px;
+        }
+        
+        .navbar-logo {
+          font-size: 24px;
+          font-weight: bold;
+        }
+        
+        .navbar-links {
+          display: flex;
+          list-style: none;
+          font-size: 18px;
+          font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+          font-weight: 800;
+          padding: 0 10px;
+          border: #333;
+          
+        }
+        
+        .navbar-links li {
+          padding: 0 10px;
+          margin: 10px 10px;
+        }
+        
+        .navbar-links a {
+          color: rgb(54, 54, 54);
+          text-decoration: none;
+        }
+        
+        .navbar-links a:hover {
+          color: #383838;
+        }
+        
+        /* Hamburger menu (hidden by default) */
+        .navbar-toggle {
+          display: none;
+          font-size: 24px;
+          cursor: pointer;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+          .navbar-links {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            position: absolute;
+            top: 49px;
+            left: 0;
+            background-color: #e2e2e2;
+            padding: 10px 0;
+          }
+          
+          .navbar-links.active {
+            display: flex;
+          }
+          
+          .navbar-links li {
+            padding: 10px 20px;
+          }
+          
+          .navbar-toggle {
+            display: block;
+          }
+          
+          .navbar {
+            flex-wrap: wrap;
+            position: relative;
+          }
+        }
+      </style>  
+      <script>
+        function toggleNav() {
+          const navLinks = document.getElementById('navLinks');
+          navLinks.classList.toggle('active');
+        }
+      </script> 
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="navbar">
+        <ul class="navbar-links" id="navLinks">
+            <li><a href="index.html" >Placement(Home)</a></li>
+          <li><a href="Search.html" ">Search & Retriveal</a></li>
+          <li><a href="waste.html">Waste Management</a></li>
+          <li><a href="simulate.html" >Simulation</a></li>
+          <li><a href="log.html" style="border-bottom: 2px solid #272626;">Logs</a></li>
+          <li><a href="visual.html" class="bg-white p-[10px] rounded-[10px]">3-D Visualization</a></li>
+        </ul>
+        <div class="navbar-logo">Logs</div>
+        <div class="navbar-toggle" onclick="toggleNav()">☰</div>
+      </nav>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header Section -->
+        <header class="mb-8">
+            <div class="flex items-center justify-between">
+                <button id="refreshBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+                <div class="flex items-center space-x-4">
+                    <span id="currentTime" class="text-gray-600"></span>
+                    
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main>
+            <!-- Filter Section -->
+            <section class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Log Filters</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="dateRange">Date Range</label>
+                        <input type="text" id="dateRange" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Select date range">
+                        <input type="hidden" id="startDate">
+                        <input type="hidden" id="endDate">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="actionType">Action Type</label>
+                        <select id="actionType" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                            <option value="all">All Actions</option>
+                            <option value="retrieve">Retrieval</option>
+                            <option value="move">Movement</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="searchInput">Search</label>
+                        <input type="text" id="searchInput" class="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500" placeholder="Search by ID, User, Container...">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Cards -->
+            <section class="grid md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500">
+                    <h3 class="text-gray-500 font-medium">Total Actions</h3>
+                    <p id="totalActions" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-green-500">
+                    <h3 class="text-gray-500 font-medium">Retrievals</h3>
+                    <p id="totalRetrievals" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-yellow-500">
+                    <h3 class="text-gray-500 font-medium">Movements</h3>
+                    <p id="totalMovements" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-4 border-l-4 border-purple-500">
+                    <h3 class="text-gray-500 font-medium">Active Users</h3>
+                    <p id="activeUsers" class="text-2xl font-bold">0</p>
+                </div>
+            </section>
+
+            <!-- Logs Table -->
+            <section class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-800">Activity Logs</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Table content will be populated by JavaScript -->
+                            <tr id="noLogsRow">
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No logs found. Please adjust your filters or try another date range.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                    <div class="flex-1 flex justify-between sm:hidden">
+                        <button id="prevPageMobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Previous
+                        </button>
+                        <button id="nextPageMobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Next
+                        </button>
+                    </div>
+                    <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                            <p id="paginationInfo" class="text-sm text-gray-700">
+                                Showing <span id="pageStart">0</span> to <span id="pageEnd">0</span> of <span id="totalEntries">0</span> entries
+                            </p>
+                        </div>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <button id="prevPage" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Previous</span>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <div id="paginationButtons" class="flex">
+                                    <!-- Pagination buttons will be added here -->
+                                </div>
+                                <button id="nextPage" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Next</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-green-600"></div>
+                <p class="mt-4 text-lg">Loading data...</p>
+            </div>
+        </div>
+
+        <!-- Error Modal -->
+        <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-red-600">Error</h3>
+                    <button id="closeErrorModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <p id="errorMessage" class="text-gray-700 mb-4"></p>
+                <button id="confirmErrorBtn" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let allLogs = [];
+        let filteredLogs = [];
+        let currentPage = 1;
+        const logsPerPage = 10;
+        
+        // Initialize DateRangePicker
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default date range (last 7 days)
+            const today = moment().format('YYYY-MM-DD');
+            const lastWeek = moment().subtract(7, 'days').format('YYYY-MM-DD');
+            
+            document.getElementById('startDate').value = lastWeek;
+            document.getElementById('endDate').value = today;
+            
+            // Initialize date picker
+            const picker = new Litepicker({
+                element: document.getElementById('dateRange'),
+                startDate: lastWeek,
+                endDate: today,
+                format: 'YYYY-MM-DD',
+                singleMode: false,
+                numberOfMonths: 2,
+                numberOfColumns: 2,
+                splitView: true,
+                showTooltip: true,
+                tooltipText: {
+                    one: 'day',
+                    other: 'days'
+                },
+                onSelect: function(start, end) {
+                    document.getElementById('startDate').value = start.format('YYYY-MM-DD');
+                    document.getElementById('endDate').value = end.format('YYYY-MM-DD');
+                    fetchLogs();
+                }
+            });
+            
+            // Set initial date range display
+            document.getElementById('dateRange').value = `${lastWeek} - ${today}`;
+            
+            // Update current time
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            
+            // Add event listeners
+            document.getElementById('refreshBtn').addEventListener('click', fetchLogs);
+            document.getElementById('actionType').addEventListener('change', filterLogs);
+            document.getElementById('searchInput').addEventListener('input', filterLogs);
+            document.getElementById('prevPage').addEventListener('click', () => changePage(currentPage - 1));
+            document.getElementById('nextPage').addEventListener('click', () => changePage(currentPage + 1));
+            document.getElementById('prevPageMobile').addEventListener('click', () => changePage(currentPage - 1));
+            document.getElementById('nextPageMobile').addEventListener('click', () => changePage(currentPage + 1));
+            document.getElementById('closeErrorModal').addEventListener('click', closeErrorModal);
+            document.getElementById('confirmErrorBtn').addEventListener('click', closeErrorModal);
+            
+            // Initial fetch
+            fetchLogs();
+        });
+        
+        // Fetch logs from API
+        function fetchLogs() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                showError('Please select a valid date range');
+                return;
+            }
+            
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            // Format dates for API
+            const formattedStartDate = `${startDate}T00:00:00`;
+            const formattedEndDate = `${endDate}T23:59:59`;
+            
+            // Fetch data from API
+            fetch(`http://127.0.0.1:8000/api/logs?startDate=${formattedStartDate}&endDate=${formattedEndDate}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.detail || 'Failed to fetch logs');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    allLogs = data.logs;
+                    updateStats();
+                    filterLogs();
+                })
+                .catch(error => {
+                    showError(error.message);
+                    console.error('Error fetching logs:', error);
+                })
+                .finally(() => {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                });
+        }
+        
+        // Filter logs based on action type and search input
+        function filterLogs() {
+            const actionType = document.getElementById('actionType').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredLogs = allLogs.filter(log => {
+                // Filter by action type
+                if (actionType !== 'all' && log.actionType !== actionType) {
+                    return false;
+                }
+                
+                // Filter by search term
+                if (searchTerm) {
+                    const searchFields = [
+                        log.userId,
+                        log.itemId,
+                        log.details.fromContainer,
+                        log.details.toContainer,
+                        log.details.reason
+                    ].filter(Boolean); // Remove null/undefined values
+                    
+                    return searchFields.some(field => 
+                        field.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                return true;
+            });
+            
+            // Reset to first page
+            currentPage = 1;
+            
+            // Update UI
+            updatePagination();
+            renderLogs();
+        }
+        
+        // Update statistics
+        function updateStats() {
+            const retrievals = allLogs.filter(log => log.actionType === 'retrieve').length;
+            const movements = allLogs.filter(log => log.actionType === 'move').length;
+            
+            // Get unique users
+            const uniqueUsers = new Set(allLogs.map(log => log.userId)).size;
+            
+            // Update stats display
+            document.getElementById('totalActions').textContent = allLogs.length;
+            document.getElementById('totalRetrievals').textContent = retrievals;
+            document.getElementById('totalMovements').textContent = movements;
+            document.getElementById('activeUsers').textContent = uniqueUsers;
+        }
+        
+        // Render logs table
+        function renderLogs() {
+            const tableBody = document.getElementById('logsTableBody');
+            const noLogsRow = document.getElementById('noLogsRow');
+            
+            // Clear table
+            tableBody.innerHTML = '';
+            
+            if (filteredLogs.length === 0) {
+                tableBody.appendChild(noLogsRow);
+                return;
+            }
+            
+            // Calculate page slice
+            const startIndex = (currentPage - 1) * logsPerPage;
+            const endIndex = startIndex + logsPerPage;
+            const pageData = filteredLogs.slice(startIndex, endIndex);
+            
+            // Create table rows
+            pageData.forEach(log => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+                
+                // Format timestamp
+                const timestamp = new Date(log.timestamp);
+                const formattedDate = timestamp.toLocaleDateString();
+                const formattedTime = timestamp.toLocaleTimeString();
+                
+                // Create action badge based on type
+                let actionBadge;
+                if (log.actionType === 'retrieve') {
+                    actionBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <i class="fas fa-arrow-up mr-1"></i> Retrieval
+                    </span>`;
+                } else if (log.actionType === 'move') {
+                    actionBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-arrows-alt mr-1"></i> Movement
+                    </span>`;
+                } else {
+                    actionBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <i class="fas fa-question mr-1"></i> Unknown
+                    </span>`;
+                }
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">${formattedDate}</div>
+                        <div class="text-xs text-gray-500">${formattedTime}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-gray-500"></i>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${log.userId}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${actionBadge}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${log.itemId}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${log.details.fromContainer || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${log.details.toContainer || '-'}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${log.details.reason || '-'}
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Update pagination info
+            document.getElementById('pageStart').textContent = filteredLogs.length ? startIndex + 1 : 0;
+            document.getElementById('pageEnd').textContent = Math.min(endIndex, filteredLogs.length);
+            document.getElementById('totalEntries').textContent = filteredLogs.length;
+        }
+        
+        // Update pagination controls
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+            const paginationButtons = document.getElementById('paginationButtons');
+            
+            // Clear pagination buttons
+            paginationButtons.innerHTML = '';
+            
+            // Create visible page buttons
+            const maxVisibleButtons = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisibleButtons - 1);
+            
+            // Adjust start page if we're near the end
+            if (endPage - startPage + 1 < maxVisibleButtons) {
+                startPage = Math.max(1, endPage - maxVisibleButtons + 1);
+            }
+            
+            // Add page buttons
+            for (let i = startPage; i <= endPage; i++) {
+                const button = document.createElement('button');
+                button.className = `relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                    i === currentPage ? 'text-green-600 bg-green-50' : 'text-gray-700 hover:bg-gray-50'
+                }`;
+                button.textContent = i;
+                button.addEventListener('click', () => changePage(i));
+                paginationButtons.appendChild(button);
+            }
+            
+            // Enable/disable previous/next buttons
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+            document.getElementById('prevPageMobile').disabled = currentPage === 1;
+            document.getElementById('nextPageMobile').disabled = currentPage === totalPages;
+            
+            // Visual indicator for disabled buttons
+            document.getElementById('prevPage').classList.toggle('opacity-50', currentPage === 1);
+            document.getElementById('nextPage').classList.toggle('opacity-50', currentPage === totalPages);
+            document.getElementById('prevPageMobile').classList.toggle('opacity-50', currentPage === 1);
+            document.getElementById('nextPageMobile').classList.toggle('opacity-50', currentPage === totalPages);
+        }
+        
+        // Change page
+        function changePage(newPage) {
+            const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+            if (newPage < 1 || newPage > totalPages) {
+                return;
+            }
+            
+            currentPage = newPage;
+            updatePagination();
+            renderLogs();
+            
+            // Scroll to top of table
+            document.querySelector('table').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+        
+        // Update current time
+        function updateCurrentTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('currentTime').textContent = now.toLocaleDateString(undefined, options);
+        }
+        
+        // Show error modal
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+        
+        // Close error modal
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
