@@ -1,15 +1,33 @@
-# Cargo Stowage Management System 
-National Space Hackathon 2025 Submission
+# Cargo Stowage Management System 🚀
+**National Space Hackathon 2025 Submission**
 
-## 🚀 About
-cargo stowage management system for space stations featuring placement optimization, efficient retrieval algorithms, solutions which helps to save time.
+[![Docker Build](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://hub.docker.com/)
+[![FastAPI](https://img.shields.io/badge/Powered%20by-FastAPI-green?logo=fastapi)](https://fastapi.tiangolo.com/)
 
-## ⚙️ Setup
+cargo stowage management system for space stations, optimizing storage, retrieval, and waste management in zero-gravity environments.
 
-### With Docker
+## 🌟 Key Features
+- **Smart Placement Recommendations** using 3D bin-packing algorithms
+- **Retrieval Optimization** with minimal movement steps
+- **Waste Management System** with automated identification
+- **Time Simulation** for mission planning
+- **Comprehensive Logging** of all operations
+- **Dockerized Deployment** for easy setup
+
+## 🛠️ Technologies Used
+- **Backend**: Python FastAPI
+- **Database**: SQLite
+- **Frontend**: HTML/CSS/JS
+- **Containerization**: Docker
+- **Algorithms**: Space partitioning, Priority-based sorting
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker 20.10+
+- Docker Desktop (for Windows/Mac)
+
+### Installation
+1. Clone repository:
 ```bash
-# Build the Docker image
-docker build -t cargo-system .
-
-# Run the container
-docker run -p 8000:8000 cargo-system
+git clone https://github.com/Nandkishore20/NationalSpaceHackathon2025.git
